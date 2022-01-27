@@ -13,3 +13,7 @@ def register_measurement(func: Callable, name: Optional[str] = None) -> Callable
 
 def available_measurments() -> List[str]:
     return [k for k in _measurements]
+
+
+from . import label
+from .measure import measure_all, measure_selected
