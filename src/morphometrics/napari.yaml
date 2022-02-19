@@ -5,24 +5,13 @@ contributions:
     - id: morphometrics.make_simple_labeled_cube
       python_name: morphometrics._sample_data:make_simple_labeled_cube
       title: Load sample labeled cube from morphometrics
-    - id: morphometrics.make_qwidget
-      python_name: morphometrics._widget:ExampleQWidget
-      title: Make example QWidget
-    - id: morphometrics.make_magic_widget
-      python_name: morphometrics._widget:example_magic_widget
-      title: Make example magic widget
-    - id: morphometrics.make_func_widget
-      python_name: morphometrics._widget:example_function_widget
-      title: Make example function widget
+    - id: morphometrics.QtMeasurementWidget
+      python_name: morphometrics._qt.measurement_widgets:QtMeasurementWidget
+      title: Make region properties measurement widget
   sample_data:
     - command: morphometrics.make_simple_labeled_cube
       display_name: simple labeled cube
       key: unique_id.1
   widgets:
-    - command: morphometrics.make_qwidget
-      display_name: Example QWidget
-    - command: morphometrics.make_magic_widget
-      display_name: Example Magic Widget
-    - command: morphometrics.make_func_widget
-      autogenerate: true
-      display_name: Example Function Widget
+    - command: morphometrics.QtMeasurementWidget
+      display_name: Measure region properties

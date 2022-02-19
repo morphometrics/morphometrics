@@ -14,7 +14,9 @@ viewer = napari.Viewer()
 viewer.add_image(intensity_image)
 viewer.add_labels(label_image)
 
-measurement_widget = QtMeasurementWidget(viewer)
-viewer.window.add_dock_widget(widget=measurement_widget)
+# to use the plugin, select plugins -> morphometrics: Make region properties measurement widget
+
+# measurement_widget = QtMeasurementWidget(viewer)
+# viewer.window.add_dock_widget(widget=measurement_widget)
 
 napari.run()
