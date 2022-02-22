@@ -2,27 +2,22 @@ name: morphometrics
 display_name: morphometrics
 contributions:
   commands:
-    - id: morphometrics.make_sample_data
-      python_name: morphometrics._sample_data:make_sample_data
-      title: Load sample data from morphometrics 
-    - id: morphometrics.make_qwidget
-      python_name: morphometrics._widget:ExampleQWidget
-      title: Make example QWidget
-    - id: morphometrics.make_magic_widget
-      python_name: morphometrics._widget:example_magic_widget
-      title: Make example magic widget
-    - id: morphometrics.make_func_widget
-      python_name: morphometrics._widget:example_function_widget
-      title: Make example function widget   
+    - id: morphometrics.make_simple_labeled_cube
+      python_name: morphometrics._sample_data:make_simple_labeled_cube
+      title: Load sample labeled cube from morphometrics
+    - id: morphometrics.make_random_3d_image
+      python_name: morphometrics._sample_data:make_random_3d_image
+      title: Load sample 3D intensity image from morphometrics
+    - id: morphometrics.QtMeasurementWidget
+      python_name: morphometrics._qt.measurement_widgets:QtMeasurementWidget
+      title: Make region properties measurement widget
   sample_data:
-    - command: morphometrics.make_sample_data
-      display_name: morphometrics
-      key: unique_id.1 
+    - command: morphometrics.make_simple_labeled_cube
+      display_name: simple labeled cube
+      key: morphometrics_labeled_cube
+    - command: morphometrics.make_random_3d_image
+      display_name: random 3D intensity image
+      key: morphometrics_3d_intensity_image
   widgets:
-    - command: morphometrics.make_qwidget
-      display_name: Example QWidget
-    - command: morphometrics.make_magic_widget
-      display_name: Example Magic Widget
-    - command: morphometrics.make_func_widget
-      autogenerate: true
-      display_name: Example Function Widget 
+    - command: morphometrics.QtMeasurementWidget
+      display_name: Measure region properties
