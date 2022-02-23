@@ -6,21 +6,9 @@ import pandas as pd
 from skimage.measure import regionprops_table
 
 from ..types import IntensityImage, LabelImage, LabelMeasurementTable
+from ..utils.surface_utils import mesh_surface
 from . import register_measurement, register_measurement_set
-
-
-@register_measurement(name="volume", uses_intensity_image=False)
-def volume(label_image: LabelImage) -> LabelMeasurementTable:
-    rp_table = regionprops_table(label_image, properties=("label", "area"))
-
-    return pd.DataFrame(rp_table).set_index("label")
-
-
-@register_measurement(name="centroid", uses_intensity_image=False)
-def centroid(label_image: LabelImage) -> LabelMeasurementTable:
-    rp_table = regionprops_table(label_image, properties=("label", "centroid"))
-
-    return pd.DataFrame(rp_table).set_index("label")
+from .surface import measure_surface_properties
 
 
 @register_measurement_set(
@@ -165,3 +153,29 @@ def ellipsoid_axis_lengths(table):
     # determine eigenvalues in descending order
     eigvals = np.sort(np.linalg.eigvalsh(S))[::-1]
     return tuple(math.sqrt(20.0 * e) for e in eigvals)
+
+
+@register_measurement(name="surface_properties_from_labels", uses_intensity_image=False)
+def measure_surface_properties_from_labels(
+    label_image: LabelImage, n_mesh_smoothing_interations: int = 500
+) -> LabelMeasurementTable:
+    all_label_indices = np.unique(label_image)
+    mesh_records = []
+    for label_index in all_label_indices:
+        if label_index == 0:
+            # background is assumed to be label 0
+            continue
+        label_mask = label_image == label_index
+        smoothed_mesh = mesh_surface(
+            label_mask, n_mesh_smoothing_interations=n_mesh_smoothing_interations
+        )
+        mesh_records.append(
+            measure_surface_properties(mesh=smoothed_mesh, object_index=label_index)
+        )
+
+    # label measurement tables have index "label"
+    surface_properties_table = pd.concat(mesh_records).rename(
+        columns={"object_index": "label"}
+    )
+    surface_properties_table.index.names = ["label"]
+    return surface_properties_table
