@@ -88,7 +88,7 @@ def measure_selected(
 
 
 def measure_all_with_defaults(
-    label_image: LabelImage, intensity_image: IntensityImage
+    label_image: LabelImage, intensity_image: Optional[IntensityImage] = None
 ) -> LabelMeasurementTable:
     measurements = available_measurments()
 

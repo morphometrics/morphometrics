@@ -3,7 +3,7 @@ import pandas as pd
 import pyvista as pv
 
 
-def measure_surface_properties(mesh: pv.PolyData, object_index: int) -> pd.DataFrame:
+def measure_surface_properties(mesh: pv.PolyData) -> pd.DataFrame:
     surface_area = mesh.area
     curvatures = mesh.curvature()
     curvature_percentiles = np.percentile(curvatures, np.arange(0, 110, 10))
@@ -11,7 +11,6 @@ def measure_surface_properties(mesh: pv.PolyData, object_index: int) -> pd.DataF
     return pd.DataFrame(
         [
             {
-                "object_index": object_index,
                 "surface_area": surface_area,
                 "curvature_mean": curvatures.mean(),
                 "curvature_stdev": curvatures.std(),
@@ -28,4 +27,4 @@ def measure_surface_properties(mesh: pv.PolyData, object_index: int) -> pd.DataF
                 "curvature_100": curvature_percentiles[10],
             }
         ]
-    ).set_index("object_index")
+    )

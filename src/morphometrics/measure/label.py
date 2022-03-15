@@ -8,7 +8,7 @@ from skimage.measure import regionprops_table
 from ..types import IntensityImage, LabelImage, LabelMeasurementTable
 from ..utils.surface_utils import mesh_surface
 from . import register_measurement, register_measurement_set
-from .surface import measure_surface_properties
+from .mesh import measure_surface_properties
 
 
 @register_measurement_set(
@@ -159,6 +159,12 @@ def ellipsoid_axis_lengths(table):
 def measure_surface_properties_from_labels(
     label_image: LabelImage, n_mesh_smoothing_interations: int = 500
 ) -> LabelMeasurementTable:
+
+    if label_image.ndim != 3:
+        raise ValueError(
+            "measure_surface_properties_from_labels requires a 3D label image"
+        )
+
     all_label_indices = np.unique(label_image)
     mesh_records = []
     for label_index in all_label_indices:
@@ -169,13 +175,11 @@ def measure_surface_properties_from_labels(
         smoothed_mesh = mesh_surface(
             label_mask, n_mesh_smoothing_interations=n_mesh_smoothing_interations
         )
-        mesh_records.append(
-            measure_surface_properties(mesh=smoothed_mesh, object_index=label_index)
-        )
+        object_measurements = measure_surface_properties(mesh=smoothed_mesh)
 
-    # label measurement tables have index "label"
-    surface_properties_table = pd.concat(mesh_records).rename(
-        columns={"object_index": "label"}
-    )
-    surface_properties_table.index.names = ["label"]
+        # label measurement tables have index "label"
+        object_measurements["label"] = label_index
+        mesh_records.append(object_measurements.set_index("label"))
+    surface_properties_table = pd.concat(mesh_records)
+
     return surface_properties_table
