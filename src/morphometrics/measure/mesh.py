@@ -2,13 +2,17 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-import pyvista as pv
 import trimesh
+from trimesh.curvature import discrete_mean_curvature_measure
 
 
-def measure_surface_properties(mesh: pv.PolyData) -> pd.DataFrame:
+def measure_surface_properties(
+    mesh: trimesh.Trimesh, curvature_radius: float = 5
+) -> pd.DataFrame:
     surface_area = mesh.area
-    curvatures = mesh.curvature()
+    curvatures = discrete_mean_curvature_measure(
+        mesh, mesh.vertices, radius=curvature_radius
+    )
     curvature_percentiles = np.percentile(curvatures, np.arange(0, 110, 10))
 
     return pd.DataFrame(
