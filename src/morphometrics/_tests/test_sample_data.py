@@ -1,7 +1,5 @@
 from morphometrics._sample_data import make_random_3d_image, make_simple_labeled_cube
 
-# add your tests here...
-
 
 def test_random_3d_image():
     layer_data_list = make_random_3d_image()
