@@ -38,7 +38,7 @@ To install latest development version :
 <tr><td>
 
 
-<img src="https://github.com/kevinyamauchi/morphometrics/raw/master/resources/surface_distance_measurement.gif"
+<img src="https://github.com/kevinyamauchi/morphometrics/raw/main/resources/surface_distance_measurement.gif"
 width="300"/>
 
 </td><td>
@@ -47,7 +47,22 @@ width="300"/>
 
 </td></tr><tr><td>
 
+<img src="https://github.com/kevinyamauchi/morphometrics/raw/main/resources/region_props_plugin.png"
+width="300"/>
+
 </td><td>
+
+[napari plugin for measuring properties of segmented objects (regionprops)](https://github.com/kevinyamauchi/morphometrics/blob/main/examples/measure_with_widget.py)
+
+</td></tr><tr><td>
+
+<img src="https://github.com/kevinyamauchi/morphometrics/raw/main/resources/object_classification.png"
+width="300"/>
+
+</td><td>
+
+[object classification](https://github.com/kevinyamauchi/morphometrics/blob/main/examples/object_classification.ipynb)
+
 
 </td></tr></table>
 
