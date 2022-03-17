@@ -6,9 +6,9 @@ import pandas as pd
 from skimage.measure import regionprops_table
 
 from ..types import IntensityImage, LabelImage, LabelMeasurementTable
-from ..utils.surface_utils import mesh_surface
+from ..utils.surface_utils import binary_mask_to_surface
 from . import register_measurement, register_measurement_set
-from .mesh import measure_surface_properties
+from .surface import measure_surface_properties
 
 
 @register_measurement_set(
@@ -157,9 +157,45 @@ def ellipsoid_axis_lengths(table):
 
 @register_measurement(name="surface_properties_from_labels", uses_intensity_image=False)
 def measure_surface_properties_from_labels(
-    label_image: LabelImage, n_mesh_smoothing_interations: int = 500
+    label_image: LabelImage, n_mesh_smoothing_interations: int = 50
 ) -> LabelMeasurementTable:
+    """Measure the surface properties of all objects in a label image by
+    applying morphometrics.measure.surface.measure_surface_properties to
+    all objects.
 
+    This measures the following properties:
+        surface_area: surface area of the mesh
+        curvature_mean: the curvature averaged over all vertices
+        curvature_stdev: the standard deviation of curvature over all vertices
+        curvature_0: minimum curvature value (across all vertices)
+        curvature_10: 10th percentile curvature value (across all vertices)
+        curvature_20: 20th percentile curvature value (across all vertices)
+        curvature_30: 30th percentile curvature value (across all vertices)
+        curvature_40: 40th percentile curvature value (across all vertices)
+        curvature_50: 50th percentile curvature value (across all vertices)
+        curvature_60: 60th percentile curvature value (across all vertices)
+        curvature_70: 70th percentile curvature value (across all vertices)
+        curvature_80: 80th percentile curvature value (across all vertices)
+        curvature_90: 90th percentile curvature value (across all vertices)
+        curvature_100: max curvature value (across all vertices)
+
+
+    Parameters
+    ----------
+    label_image : LabelImage
+        The label image from which to measure the surface properties.
+    n_mesh_smoothing_interations : int
+        The number of interations of smooting to perform. Smoothing is
+        done by the trimesh laplacian filter:
+        https://trimsh.org/trimesh.smoothing.html#trimesh.smoothing.filter_laplacian
+        Default value is 50.
+
+    Returns
+    -------
+    surface_properties_table : LabelMeasurementTable
+        The measured surface properties. Each measurement is a column and each
+        object is a row.
+    """
     if label_image.ndim != 3:
         raise ValueError(
             "measure_surface_properties_from_labels requires a 3D label image"
@@ -172,10 +208,10 @@ def measure_surface_properties_from_labels(
             # background is assumed to be label 0
             continue
         label_mask = label_image == label_index
-        smoothed_mesh = mesh_surface(
+        smoothed_mesh = binary_mask_to_surface(
             label_mask, n_mesh_smoothing_interations=n_mesh_smoothing_interations
         )
-        object_measurements = measure_surface_properties(mesh=smoothed_mesh)
+        object_measurements = measure_surface_properties(surface=smoothed_mesh)
 
         # label measurement tables have index "label"
         object_measurements["label"] = label_index
