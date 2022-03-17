@@ -7,11 +7,43 @@ from trimesh.curvature import discrete_mean_curvature_measure
 
 
 def measure_surface_properties(
-    mesh: trimesh.Trimesh, curvature_radius: float = 5
+    surface: trimesh.Trimesh, curvature_radius: float = 5
 ) -> pd.DataFrame:
-    surface_area = mesh.area
+    """Measure the surface properties of a watertight mesh.
+
+    This measures the following properties:
+        surface_area: surface area of the mesh
+        curvature_mean: the curvature averaged over all vertices
+        curvature_stdev: the standard deviation of curvature over all vertices
+        curvature_0: minimum curvature value (across all vertices)
+        curvature_10: 10th percentile curvature value (across all vertices)
+        curvature_20: 20th percentile curvature value (across all vertices)
+        curvature_30: 30th percentile curvature value (across all vertices)
+        curvature_40: 40th percentile curvature value (across all vertices)
+        curvature_50: 50th percentile curvature value (across all vertices)
+        curvature_60: 60th percentile curvature value (across all vertices)
+        curvature_70: 70th percentile curvature value (across all vertices)
+        curvature_80: 80th percentile curvature value (across all vertices)
+        curvature_90: 90th percentile curvature value (across all vertices)
+        curvature_100: max curvature value (across all vertices)
+
+    Parameters
+    ----------
+    surface : trimesh.Trimesh
+        The surface from which to measure the surface properties. The mesh should contain
+        a single object and the mesh should be watertight.
+    curvature_radius : float
+        The radius to use for calculating
+
+    Returns
+    -------
+    measurement_table : pd.DataFrame
+        The measurements in a pandas DataFrame. Each measurement is
+        in its own column. All measurements in a single row.
+    """
+    surface_area = surface.area
     curvatures = discrete_mean_curvature_measure(
-        mesh, mesh.vertices, radius=curvature_radius
+        surface, surface.vertices, radius=curvature_radius
     )
     curvature_percentiles = np.percentile(curvatures, np.arange(0, 110, 10))
 
@@ -71,11 +103,11 @@ def distance_between_surfaces(
 
     # find where the rays intersect
     locations, index_ray, _ = destination_surface.ray.intersects_location(
-        ray_origins=ray_origins, ray_directions=ray_directions
+        ray_origins=ray_origins, ray_directions=ray_directions, multiple_hits=False
     )
 
     # calculate the distances
     distances = np.repeat(fill_value, len(ray_origins))
-    distances[index_ray] = np.linalg.norm(locations - ray_origins[index_ray])
+    distances[index_ray] = np.linalg.norm(locations - ray_origins[index_ray], axis=1)
 
     return distances

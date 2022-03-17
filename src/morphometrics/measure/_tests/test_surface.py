@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import trimesh
 
-from morphometrics.measure.mesh import distance_between_surfaces
+from morphometrics.measure.surface import distance_between_surfaces
 
 
 @pytest.mark.parametrize("fill_value", [np.nan, 0])
