@@ -38,7 +38,7 @@ To install latest development version :
 <tr><td>
 
 
-<img src="https://github.com/kevinyamauchi/morphometrics/raw/master/resources/surface_distance_measurement.gif"
+<img src="https://github.com/kevinyamauchi/morphometrics/raw/main/resources/surface_distance_measurement.gif"
 width="300"/>
 
 </td><td>
