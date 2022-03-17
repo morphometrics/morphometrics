@@ -33,6 +33,23 @@ To install latest development version :
 
     pip install git+https://github.com/kevinyamauchi/morphometrics.git
 
+## Example applications
+<table border="0">
+<tr><td>
+
+
+<img src="https://github.com/kevinyamauchi/morphometrics/raw/master/resources/surface_distance_measurement.gif"
+width="300"/>
+
+</td><td>
+
+[measure the distance between surfaces](https://github.com/kevinyamauchi/morphometrics/blob/main/examples/surface_distance_measurement.ipynb)
+
+</td></tr><tr><td>
+
+</td><td>
+
+</td></tr></table>
 
 ## Contributing
 
