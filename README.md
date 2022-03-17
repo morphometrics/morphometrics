@@ -63,8 +63,18 @@ width="300"/>
 
 [object classification](https://github.com/kevinyamauchi/morphometrics/blob/main/examples/object_classification.ipynb)
 
+</td></tr><tr><td>
+
+<img src="https://github.com/kevinyamauchi/morphometrics/raw/main/resources/mesh_object.png"
+width="300"/>
+
+</td><td>
+
+[mesh binary mask](https://github.com/kevinyamauchi/morphometrics/blob/main/examples/mesh_binary_mask.ipynb)
+
 
 </td></tr></table>
+
 
 ## Contributing
 
