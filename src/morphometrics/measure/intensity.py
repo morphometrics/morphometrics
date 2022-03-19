@@ -114,7 +114,21 @@ def measure_internal_intensity(
         "intensity_min"
     )
 
-    return pd.DataFrame(intensity_measurements).set_index("label")
+    internal_intensity_measurements = pd.DataFrame(intensity_measurements).set_index(
+        "label"
+    )
+
+    # determine if any labels are not represented because they do not have
+    # internal pixels
+    original_label_values = set(np.unique(label_image))
+    internal_label_values = set(np.unique(internal_labels))
+    no_internal_pixel_label_values = original_label_values - internal_label_values
+
+    n_columns = internal_intensity_measurements.shape[1]
+    for label_value in no_internal_pixel_label_values:
+        internal_intensity_measurements.loc[label_value] = np.zeros((n_columns,))
+
+    return internal_intensity_measurements
 
 
 def measure_intensity_features(
