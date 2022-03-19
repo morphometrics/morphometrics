@@ -1,7 +1,7 @@
 import pymeshfix
 from skimage.measure import marching_cubes
 from trimesh import Trimesh
-from trimesh.smoothing import filter_laplacian
+from trimesh.smoothing import filter_taubin
 
 from ..types import BinaryImage
 
@@ -17,8 +17,8 @@ def binary_mask_to_surface(
         A 3D binary image corresponding to the object you want to mesh.
     n_mesh_smoothing_interations : int
         The number of interations of smooting to perform. Smoothing is
-        done by the trimesh laplacian filter:
-        https://trimsh.org/trimesh.smoothing.html#trimesh.smoothing.filter_laplacian
+        done by the trimesh taubin filter:
+        https://trimsh.org/trimesh.smoothing.html#trimesh.smoothing.filter_taubin
         Default value is 50.
 
     Returns
@@ -36,6 +36,6 @@ def binary_mask_to_surface(
 
     # optionally clean up the mesh
     if n_mesh_smoothing_interations > 0:
-        filter_laplacian(mesh, iterations=n_mesh_smoothing_interations)
+        filter_taubin(mesh, iterations=n_mesh_smoothing_interations)
 
     return mesh
