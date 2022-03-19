@@ -4,6 +4,7 @@ from skimage.measure import regionprops_table
 
 from ..types import IntensityImage, LabelImage, LabelMeasurementTable
 from ..utils.image_utils import make_boundary_mask
+from ..utils.math_utils import safe_divide
 
 
 def measure_boundary_intensity(
@@ -159,4 +160,14 @@ def measure_intensity_features(
         boundary_dilation_size=boundary_dilation_size,
     )
 
-    return pd.concat([boundary_intensity_features, internal_intensity_features], axis=1)
+    intensity_measurements = pd.concat(
+        [boundary_intensity_features, internal_intensity_features], axis=1
+    )
+
+    # add the boundary internal intensity ratio
+    intensity_measurements["boundary_to_internal_intensity_ratio"] = safe_divide(
+        intensity_measurements["boundary_intensity_mean"],
+        intensity_measurements["internal_intensity_mean"],
+    )
+
+    return intensity_measurements

@@ -9,6 +9,7 @@ from morphometrics.measure.intensity import (
     measure_intensity_features,
     measure_internal_intensity,
 )
+from morphometrics.utils.math_utils import safe_divide
 
 
 def _make_test_intensity_image(label_image):
@@ -83,7 +84,7 @@ expected_boundary_intensity_columns = {
 }
 expected_intensity_features_columns = expected_internal_intensity_columns.union(
     expected_boundary_intensity_columns
-)
+).union({"boundary_to_internal_intensity_ratio"})
 
 
 @pytest.mark.parametrize(
@@ -143,6 +144,10 @@ def test_measure_intensity_features(test_data_func):
     )
     np.testing.assert_almost_equal(
         measurements["internal_intensity_mean"], expected_internal_intensity
+    )
+    np.testing.assert_almost_equal(
+        measurements["boundary_to_internal_intensity_ratio"],
+        safe_divide(expected_boundary_intensity, expected_internal_intensity),
     )
 
     assert set(measurements.columns) == expected_intensity_features_columns
