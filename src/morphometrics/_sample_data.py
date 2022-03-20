@@ -13,6 +13,9 @@ def make_random_3d_image() -> "List[napari.types.LayerDataTuple]":  # noqa: F821
 
 
 def make_cylinders_and_spheres() -> "List[napari.types.LayerDataTuple]":  # noqa: F821
-    label_image, label_table = cylinders_and_spheres()
+    label_image, label_table, intensity_image = cylinders_and_spheres()
 
-    return [(label_image, {"features": label_table}, "labels")]
+    return [
+        (label_image, {"features": label_table}, "labels"),
+        (intensity_image, {}, "image"),
+    ]

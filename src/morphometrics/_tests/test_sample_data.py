@@ -26,7 +26,7 @@ def test_simple_labeled_cube():
 
 def test_cylinders_and_spheres():
     layer_data_list = make_cylinders_and_spheres()
-    assert len(layer_data_list) == 1
+    assert len(layer_data_list) == 2
 
     data, meta, layer_type = layer_data_list[0]
     assert data.ndim == 3
@@ -35,3 +35,7 @@ def test_cylinders_and_spheres():
 
     label_table = meta["features"]
     assert set(label_table.columns) == {"label", "shape"}
+
+    data, meta, layer_type = layer_data_list[1]
+    assert data.ndim == 3
+    assert layer_type == "image"
