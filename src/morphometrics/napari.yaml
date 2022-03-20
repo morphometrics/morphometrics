@@ -8,6 +8,9 @@ contributions:
     - id: morphometrics.make_random_3d_image
       python_name: morphometrics._sample_data:make_random_3d_image
       title: Load sample 3D intensity image from morphometrics
+    - id: morphometrics.make_cylinders_and_spheres
+      python_name: morphometrics._sample_data:make_cylinders_and_spheres
+      title: Load sample 3D label image with cylinders and spheres
     - id: morphometrics.QtMeasurementWidget
       python_name: morphometrics._qt.measurement_widgets:QtMeasurementWidget
       title: Make region properties measurement widget
@@ -18,6 +21,9 @@ contributions:
     - command: morphometrics.make_random_3d_image
       display_name: random 3D intensity image
       key: morphometrics_3d_intensity_image
+    - command: morphometrics.make_cylinders_and_spheres
+      display_name: 3D cylinders and spheres
+      key: morphometrics_cylinders_and_spheres
   widgets:
     - command: morphometrics.QtMeasurementWidget
       display_name: Measure region properties

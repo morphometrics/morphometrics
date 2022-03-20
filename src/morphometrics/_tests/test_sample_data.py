@@ -1,4 +1,8 @@
-from morphometrics._sample_data import make_random_3d_image, make_simple_labeled_cube
+from morphometrics._sample_data import (
+    make_cylinders_and_spheres,
+    make_random_3d_image,
+    make_simple_labeled_cube,
+)
 
 
 def test_random_3d_image():
@@ -18,3 +22,16 @@ def test_simple_labeled_cube():
     assert data.ndim == 3
     assert data.dtype == int
     assert layer_type == "labels"
+
+
+def test_cylinders_and_spheres():
+    layer_data_list = make_cylinders_and_spheres()
+    assert len(layer_data_list) == 1
+
+    data, meta, layer_type = layer_data_list[0]
+    assert data.ndim == 3
+    assert data.dtype == int
+    assert layer_type == "labels"
+
+    label_table = meta["features"]
+    assert set(label_table.columns) == {"label", "shape"}
