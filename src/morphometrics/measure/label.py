@@ -157,7 +157,7 @@ def ellipsoid_axis_lengths(table):
 
 @register_measurement(name="surface_properties_from_labels", uses_intensity_image=False)
 def measure_surface_properties_from_labels(
-    label_image: LabelImage, n_mesh_smoothing_interations: int = 50
+    label_image: LabelImage, n_mesh_smoothing_interations: int = 10
 ) -> LabelMeasurementTable:
     """Measure the surface properties of all objects in a label image by
     applying morphometrics.measure.surface.measure_surface_properties to
