@@ -52,7 +52,7 @@ def table_to_anndata(
         else:
             obs = obs_from_measurement_table
 
-    var = measurement_table.columns.to_frame()
+    var = pd.DataFrame(index=measurement_table.columns)
     X = measurement_table.fillna(fill_na_value).to_numpy()
 
     return anndata.AnnData(X=X, var=var, obs=obs)
