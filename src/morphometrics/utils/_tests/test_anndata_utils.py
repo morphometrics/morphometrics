@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from morphometrics.utils.anndata_utils import sample_by_obs_column, table_to_anndata
+from morphometrics.utils.anndata_utils import iterate_over_anndata, table_to_anndata
 
 
 def make_test_label_measurements_table_no_nan():
@@ -74,7 +74,7 @@ def test_label_measurements_to_anndata_fill_nan():
     np.testing.assert_allclose(adata.X, expected_x)
 
 
-def test_sample_by_obs_column():
+def test_iterate_over_anndata():
     rng = np.random.default_rng(42)
     n_rows = 100
     categories = ["cat", "dog", "cow"]
@@ -84,52 +84,9 @@ def test_sample_by_obs_column():
     obs = pd.DataFrame({"class": rng.choice(categories, n_rows)})
     adata = anndata.AnnData(X=X, obs=obs)
 
-    n_samples = 10
-    sampled_adata, sample_map = sample_by_obs_column(
-        adata, column_name="class", n_samples=n_samples
-    )
-
-    assert isinstance(sampled_adata, anndata.AnnData)
-    assert sampled_adata.X.shape == (30, 5)
-
-    sampled_obs = sampled_adata.obs
-    for category in categories:
-        assert len(sampled_obs.loc[sampled_obs["class"] == category]) == n_samples
-
-    assert set(sample_map.keys()) == set(categories)
-    for key, value in sample_map.items():
-        assert len(value) == n_samples
-
-
-def test_sample_by_obs_column_too_many_samples():
-    """Test that all items are returned when a greater number of samples than
-    rows in adata are requested.
-    """
-    rng = np.random.default_rng(42)
-    categories = ["cow", "cat"]
-    n_per_category = 10
-    n_rows = len(categories) * n_per_category
-
-    # create the anndata object
-    X = rng.random((n_rows, 5))
-    obs_list = []
-    for category in categories:
-        obs_list.append(np.repeat(category, n_per_category))
-    obs = pd.DataFrame({"class": np.concatenate(obs_list)})
-    adata = anndata.AnnData(X=X, obs=obs)
-
-    n_samples = n_per_category + 1
-    sampled_adata, sample_map = sample_by_obs_column(
-        adata, column_name="class", n_samples=n_samples
-    )
-
-    assert isinstance(sampled_adata, anndata.AnnData)
-    assert sampled_adata.X.shape == (20, 5)
-
-    sampled_obs = sampled_adata.obs
-    for category in categories:
-        assert len(sampled_obs.loc[sampled_obs["class"] == category]) == n_per_category
-
-    assert set(sample_map.keys()) == set(categories)
-    for key, value in sample_map.items():
-        assert len(value) == n_per_category
+    n_iterations = 0
+    for row in iterate_over_anndata(adata):
+        assert len(row) == 1
+        assert isinstance(row, anndata.AnnData)
+        n_iterations += 1
+    assert n_iterations == n_rows

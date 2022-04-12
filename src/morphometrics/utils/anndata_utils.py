@@ -1,7 +1,6 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Iterator, List, Optional, Union
 
 import anndata
-import numpy as np
 import pandas as pd
 
 from ..types import LabelMeasurementTable
@@ -58,46 +57,20 @@ def table_to_anndata(
     return anndata.AnnData(X=X, var=var, obs=obs)
 
 
-def sample_by_obs_column(
-    adata: anndata.AnnData,
-    column_name: str,
-    n_samples: int = 10,
-    random_seed: float = 42,
-) -> Tuple[anndata.AnnData, Dict[Any, np.ndarray]]:
-    """Get random samples from each category in a categorical column in AnnData.obs.
-
-    This is useful for sampling observations from clusters.
+def iterate_over_anndata(adata: anndata.AnnData) -> Iterator[anndata.AnnData]:
+    """Iterate over an AnnData table.
 
     Parameters
     ----------
     adata : anndata.AnnData
-        The AnnData object to sample from.
-    column_name : str
-        The name of the obs column to sample from. n_samples from each category
-        in the obs column will be drawn.
-    n_samples : int
-        The number of samples to draw per category. If n_samples is greater
-        than the number of observations in a given category, all observations
-        from that category will be drawn.
-    random_seed : float
-        The seed to be used for the random sampling. Sampling is performed
-        by the numpy default_rng:
-        https://numpy.org/doc/stable/reference/random/generator.html
+        The table to iterate over.
+
+    Yields
+    ------
+    adata_row : anndata.AnnData
+        A row from the AnnData table
     """
-    obs_column_values = adata.obs[column_name].to_numpy()
-    obs_column_categories = adata.obs[column_name].unique()
+    n_rows = len(adata)
 
-    sample_map = dict()
-    rng = np.random.default_rng(random_seed)
-    for category in obs_column_categories:
-        category_indices = np.argwhere(obs_column_values == category).ravel()
-
-        if n_samples > len(category_indices):
-            n_category_samples = len(category_indices)
-        else:
-            n_category_samples = n_samples
-        sample_map[category] = rng.choice(
-            category_indices, n_category_samples, replace=False
-        )
-    all_sample_indices = np.concatenate([value for value in sample_map.values()])
-    return adata[all_sample_indices, :], sample_map
+    for row_index in range(n_rows):
+        yield adata[row_index, :]
