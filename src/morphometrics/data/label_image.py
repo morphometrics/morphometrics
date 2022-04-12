@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from skimage import draw
 
-from ..types import LabelImage
+from ..types import IntensityImage, LabelImage
 
 
 def simple_labeled_cube() -> LabelImage:
@@ -44,7 +44,7 @@ def _make_sphere(rng: np.random.Generator, radius: float = 5):
 _object_functions = {"cylinder": _make_cylinder, "sphere": _make_sphere}
 
 
-def cylinders_and_spheres() -> Tuple[LabelImage, pd.DataFrame]:
+def cylinders_and_spheres() -> Tuple[LabelImage, pd.DataFrame, IntensityImage]:
     """Make a label image with cylinders and spheres.
 
     Returns
