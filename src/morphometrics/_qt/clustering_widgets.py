@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QProgressBar,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -50,7 +51,7 @@ class QtClusterAnnotatorWidget(QWidget):
         self._hotkeys_to_labels = dict()
 
         # index of the label in the label image for the selected observation
-        self._selected_observation = 0
+        self._selected_sample = 0
 
         # create the start annotating widget
         self._start_annotating_widget = magicgui(
@@ -112,23 +113,39 @@ class QtClusterAnnotatorWidget(QWidget):
         self._annotating = annotating
 
     @property
-    def selected_observation(self) -> int:
-        return self._selected_observation
+    def n_samples(self) -> Optional[int]:
+        if self._sample_data is None:
+            return None
+        return len(self._sample_data)
 
-    @selected_observation.setter
-    def selected_observation(self, selected_observation):
+    @property
+    def selected_sample(self) -> int:
+        return self._selected_sample
+
+    @selected_sample.setter
+    def selected_sample(self, selected_sample):
         if (self._layer is None) or (self._sample_data is None):
             return
-        self._selected_observation = selected_observation
+        self._selected_sample = selected_sample
         selected_sample_row = self.selected_sample_row
         label_value = selected_sample_row.obs["label"].values[0]
         self._layer.selected_label = label_value
 
-    def next_observation(self):
+    def next_sample(self):
+        """Incrememnt the selected sample"""
         if self._sample_data is None:
+            # do nothing if the sample data hasn't been set
             return
-        n_observations = len(self._sample_data)
-        self.selected_observation = (self._selected_observation + 1) % n_observations
+        self.selected_sample = (self.selected_sample + 1) % self.n_samples
+
+    def previous_sample(self):
+        """Decrement the selected sample"""
+        if self._sample_data is None:
+            # do nothing if the sample data hasn't been set
+            return
+        self.selected_sample = (
+            (self.selected_sample - 1) + self.n_samples
+        ) % self.n_samples
 
     @property
     def selected_sample_row(self) -> Optional[anndata.AnnData]:
@@ -136,7 +153,7 @@ class QtClusterAnnotatorWidget(QWidget):
         if self._sample_data is None:
             return None
         else:
-            return self._sample_data[self.selected_observation, :]
+            return self._sample_data[self.selected_sample, :]
 
     def _select_layer(self, labels_layer: Optional[napari.layers.Labels]):
         self.layer = labels_layer
@@ -174,7 +191,7 @@ class QtClusterAnnotatorWidget(QWidget):
         self._random_seed = random_seed
 
         self.annotating = True
-        self.selected_observation = 0
+        self.selected_sample = 0
 
     def _set_labels(self, label_string: str):
         labels = label_string.replace(" ", "").split(",")
@@ -250,12 +267,12 @@ class QtClusterAnnotatorWidget(QWidget):
 
     def _label_selected_observation(self, label_value):
         self._sample_data.obs.iat[
-            self.selected_observation,
+            self.selected_sample,
             self._sample_data.obs.columns.get_loc(self._label_column),
         ] = label_value
         print(self._sample_data.obs)
         if self.auto_advance is True:
-            self.next_observation()
+            self.next_sample()
 
     def _on_label_q(self, event=None):
         label_value = self._hotkeys_to_labels["q"]
@@ -299,11 +316,23 @@ class QtClusterAnnotatorWidget(QWidget):
 
 
 class QtSampleSelectWidget(QWidget):
+
+    _default_selection_label = "current selection:"
+    _selection_label_format_string = (
+        _default_selection_label + " {n_labeled} / {n_total}"
+    )
+
     def __init__(self):
         super().__init__()
 
         self._title_widget = QLabel("Sample:")
         self._title_widget.setFont(QFont("Arial", 16))
+
+        self._current_selection_label = QLabel(self._default_selection_label)
+
+        self._labeling_progress_bar = QProgressBar(
+            minimum=0, maximum=100, textVisible=True
+        )
 
         self._previous_sample_button = QPushButton("prev.")
         self._previous_sample_button.sizePolicy().setHorizontalStretch(1)
@@ -332,11 +361,14 @@ class QtSampleSelectWidget(QWidget):
         # add widgets to layout
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(self._title_widget, 0, 0, 1, 4)
-        self.grid_layout.addLayout(button_row, 1, 0, 1, 4)
-        self.grid_layout.addWidget(self._auto_advance_label, 2, 0, 1, 3)
-        self.grid_layout.addWidget(self._auto_advance_cb, 2, 1, 1, 1)
+        self.grid_layout.addWidget(self._current_selection_label, 1, 0)
+        self.grid_layout.addWidget(QLabel("labeling progress:"), 2, 0)
+        self.grid_layout.addWidget(self._labeling_progress_bar, 2, 1)
+        self.grid_layout.addLayout(button_row, 3, 0, 1, 4)
+        self.grid_layout.addWidget(self._auto_advance_label, 4, 0, 1, 3)
+        self.grid_layout.addWidget(self._auto_advance_cb, 4, 1, 1, 1)
 
-        self.grid_layout.setRowStretch(3, 1)
+        self.grid_layout.setRowStretch(5, 1)
 
 
 class QtLabelSelectWidget(QWidget):
