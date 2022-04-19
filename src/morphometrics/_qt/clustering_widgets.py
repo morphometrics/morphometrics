@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 
 import anndata
 import napari
+import pandas as pd
 from magicgui import magicgui
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QFont
@@ -33,6 +34,10 @@ LABEL_HOTKEYS = {
 
 
 class QtClusterAnnotatorWidget(QWidget):
+
+    _start_annotating_string = "start annotating"
+    _stop_annotating_string = "stop annotating"
+
     def __init__(self, viewer: napari.Viewer):
         super().__init__()
         self._viewer = viewer
@@ -55,7 +60,9 @@ class QtClusterAnnotatorWidget(QWidget):
 
         # create the start annotating widget
         self._start_annotating_widget = magicgui(
-            self.start_annotation, group_by={"choices": self._get_group_by_keys}
+            self.start_annotation,
+            group_by={"choices": self._get_group_by_keys},
+            call_button=self._start_annotating_string,
         )
 
         # create the layer selection widgets
@@ -137,6 +144,7 @@ class QtClusterAnnotatorWidget(QWidget):
         selected_sample_row = self.selected_sample_row
         label_value = selected_sample_row.obs["label"].values[0]
         self._layer.selected_label = label_value
+        self._update_sample_selection_widget()
 
     def next_sample(self):
         """Incrememnt the selected sample"""
@@ -211,8 +219,10 @@ class QtClusterAnnotatorWidget(QWidget):
 
             self.annotating = True
             self.selected_sample = 0
+            # self._start_annotating_widget.call_button.text = self._stop_annotating_string
         else:
             self.annotating = False
+            # self._start_annotating_widget.call_button.text = self._start_annotating_string
 
     def _set_labels(self, label_string: str):
         labels = label_string.replace(" ", "").split(",")
@@ -254,17 +264,21 @@ class QtClusterAnnotatorWidget(QWidget):
     def _initialize_annotation(self):
         if self.data is None:
             return
+
+        if self._label_column not in self.data.obs.columns:
+            self.data.obs[self._label_column] = ""
+
         self._sample_data = sample_anndata(
             self.data,
             group_by=self._group_by,
             n_samples_per_group=self._n_samples_per_group,
             random_seed=self._random_seed,
         )
-        self._sample_data.obs[self._label_column] = ""
 
         # setup sample selection widget
         self._connect_sample_selection_widget_events()
         self._sample_selection_widget.setVisible(True)
+        self._initialize_sample_selection_widget()
 
         # make the labeling widget visible
         self._label_widget.setVisible(True)
@@ -287,6 +301,39 @@ class QtClusterAnnotatorWidget(QWidget):
         # hide the labeling widget
         self._label_widget.setVisible(False)
         self._label_widget.clear_labels()
+
+        self._update_adata_obs(self.data.obs, self._sample_data.obs[self._label_column])
+        self._sample_data = None
+
+    def _initialize_sample_selection_widget(self):
+        if self._sample_data is None:
+            self._n_samples = 0
+            return
+        self._n_samples = len(self._sample_data)
+        self._update_sample_selection_widget()
+
+    def _update_sample_selection_widget(self):
+        obs = self._sample_data.obs
+        non_empty_rows = obs.loc[obs[self._label_column] != ""]
+        n_labeled = len(non_empty_rows)
+        progress = (n_labeled / self._n_samples) * 100
+
+        # update the progress bar
+        self._sample_selection_widget._labeling_progress_bar.setValue(progress)
+
+        # update the label
+        format_string = self._sample_selection_widget._selection_label_format_string
+        new_current_selection = format_string.format(
+            n_labeled=self.selected_sample, n_total=self._n_samples - 1
+        )
+        self._sample_selection_widget._current_selection_label.setText(
+            new_current_selection
+        )
+
+    def _update_adata_obs(self, obs: pd.DataFrame, new_column: pd.Series):
+        column_name = new_column.name
+        for index, value in new_column.iteritems():
+            obs.at[index, column_name] = value
 
     def _connect_sample_selection_widget_events(self):
         self._sample_selection_widget._previous_sample_button.clicked.connect(
@@ -334,6 +381,8 @@ class QtClusterAnnotatorWidget(QWidget):
             self._sample_data.obs.columns.get_loc(self._label_column),
         ] = label_value
         print(self._sample_data.obs)
+
+        self._update_sample_selection_widget()
         if self.auto_advance is True:
             self.next_sample()
 
