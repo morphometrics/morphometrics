@@ -68,8 +68,6 @@ sampled_measurements = sample_anndata(
 
 viewer = napari.Viewer()
 viewer.add_labels(label_image, metadata={"adata": measurement_data})
-label_image_2 = np.random.randint(0, 5, (10, 10, 10))
-viewer.add_labels(label_image_2)
 
 widget = QtClusterAnnotatorWidget(viewer)
 viewer.window.add_dock_widget(widget)

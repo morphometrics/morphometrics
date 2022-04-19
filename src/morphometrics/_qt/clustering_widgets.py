@@ -67,9 +67,16 @@ class QtClusterAnnotatorWidget(QWidget):
         )
         self._layer_selection_widget()
 
-        self.auto_advance = True
         self._sample_selection_widget = QtSampleSelectWidget()
+        self._sample_selection_widget.setVisible(False)
+        self._sample_selection_widget._auto_advance_cb.clicked.connect(
+            self._on_auto_advance_clicked
+        )
+
         self._label_widget = QtLabelSelectWidget()
+        self._label_widget.setVisible(False)
+
+        self.auto_advance = True
 
         # add widgets to the layout
         self.setLayout(QVBoxLayout())
@@ -109,7 +116,7 @@ class QtClusterAnnotatorWidget(QWidget):
         if annotating is True:
             self._initialize_annotation()
         else:
-            self._stop_annotation()
+            self._teardown_annotation()
         self._annotating = annotating
 
     @property
@@ -155,6 +162,16 @@ class QtClusterAnnotatorWidget(QWidget):
         else:
             return self._sample_data[self.selected_sample, :]
 
+    @property
+    def auto_advance(self) -> bool:
+        """Flag set to true when the next sample is automatically selected after making an annotation."""
+        return self._auto_advance
+
+    @auto_advance.setter
+    def auto_advance(self, auto_advance: bool):
+        self._sample_selection_widget.update_auto_advance(auto_advance)
+        self._auto_advance = auto_advance
+
     def _select_layer(self, labels_layer: Optional[napari.layers.Labels]):
         self.layer = labels_layer
 
@@ -177,21 +194,25 @@ class QtClusterAnnotatorWidget(QWidget):
     ):
         if self._layer is None:
             return
-        if not self._validate_n_samples(
-            group_by=group_by, n_samples_per_group=n_samples_per_group
-        ):
-            raise ValueError(
-                "n_samples_per_group is greater than the number of observations"
-            )
-        # set the labels in the QtLabelSelectWidget
-        self._set_labels(labels)
 
-        self._group_by = group_by
-        self._n_samples_per_group = n_samples_per_group
-        self._random_seed = random_seed
+        if self.annotating is False:
+            if not self._validate_n_samples(
+                group_by=group_by, n_samples_per_group=n_samples_per_group
+            ):
+                raise ValueError(
+                    "n_samples_per_group is greater than the number of observations"
+                )
+            # set the labels in the QtLabelSelectWidget
+            self._set_labels(labels)
 
-        self.annotating = True
-        self.selected_sample = 0
+            self._group_by = group_by
+            self._n_samples_per_group = n_samples_per_group
+            self._random_seed = random_seed
+
+            self.annotating = True
+            self.selected_sample = 0
+        else:
+            self.annotating = False
 
     def _set_labels(self, label_string: str):
         labels = label_string.replace(" ", "").split(",")
@@ -224,10 +245,10 @@ class QtClusterAnnotatorWidget(QWidget):
             hotkey = self._labels_to_hotkeys[label_value]
             label_callback = getattr(self, f"_on_label_{hotkey}")
 
-            # add the labeling callback to the button press
+            # remove the labeling callback from the button press
             label_button.clicked.disconnect(label_callback)
 
-            # add the hotkey to the viewer
+            # disconnect the hotkey from the viewer
             self._viewer.bind_key(hotkey, None)
 
     def _initialize_annotation(self):
@@ -241,8 +262,47 @@ class QtClusterAnnotatorWidget(QWidget):
         )
         self._sample_data.obs[self._label_column] = ""
 
-    def _stop_annotation(self):
-        pass
+        # setup sample selection widget
+        self._connect_sample_selection_widget_events()
+        self._sample_selection_widget.setVisible(True)
+
+        # make the labeling widget visible
+        self._label_widget.setVisible(True)
+
+    def _teardown_annotation(self):
+        """Clean up after annotation is completed.
+
+        This includes:
+            - hiding widgets
+            - disconnecting callbacks and events
+            - adding the annotations back into the original anndata object
+        """
+        # remove the viewer callbacks
+        self._detach_label_hotkeys_and_callbacks()
+
+        # tear down sample selection widget
+        self._disconnect_sample_selection_widget_events()
+        self._sample_selection_widget.setVisible(False)
+
+        # hide the labeling widget
+        self._label_widget.setVisible(False)
+        self._label_widget.clear_labels()
+
+    def _connect_sample_selection_widget_events(self):
+        self._sample_selection_widget._previous_sample_button.clicked.connect(
+            self.previous_sample
+        )
+        self._sample_selection_widget._next_sample_button.clicked.connect(
+            self.next_sample
+        )
+
+    def _disconnect_sample_selection_widget_events(self):
+        self._sample_selection_widget._previous_sample_button.clicked.disconnect(
+            self.previous_sample
+        )
+        self._sample_selection_widget._next_sample_button.clicked.disconnect(
+            self.next_sample
+        )
 
     def _validate_n_samples(
         self, group_by: Optional[str], n_samples_per_group: int
@@ -264,6 +324,9 @@ class QtClusterAnnotatorWidget(QWidget):
         if self._layer is None:
             return []
         return self.data.obs.columns.tolist()
+
+    def _on_auto_advance_clicked(self):
+        self._auto_advance = self._sample_selection_widget._auto_advance_cb.isChecked()
 
     def _label_selected_observation(self, label_value):
         self._sample_data.obs.iat[
@@ -344,6 +407,7 @@ class QtSampleSelectWidget(QWidget):
         button_row.addWidget(self._next_sample_button)
 
         self._auto_advance_cb = QCheckBox()
+        self._auto_advance_cb.setTristate(False)
         self._auto_advance_label = QLabel("auto advance:")
         self._auto_advance_label.setToolTip(
             "automatically advance to next label after annotation"
@@ -369,6 +433,11 @@ class QtSampleSelectWidget(QWidget):
         self.grid_layout.addWidget(self._auto_advance_cb, 4, 1, 1, 1)
 
         self.grid_layout.setRowStretch(5, 1)
+
+    def update_auto_advance(self, auto_advance: bool):
+        self._auto_advance_cb.blockSignals(True)
+        self._auto_advance_cb.setChecked(auto_advance)
+        self._auto_advance_cb.blockSignals(False)
 
 
 class QtLabelSelectWidget(QWidget):
@@ -405,7 +474,6 @@ class QtLabelSelectWidget(QWidget):
         self.grid_layout.setRowStretch(2, 1)
 
     def set_labels(self, labels: Dict[str, str]):
-
         for label_index, (label_hotkey, label_value) in enumerate(labels.items()):
             grid_row = label_index + 2
             label_hotkey_qlabel = QLabel(label_hotkey)
@@ -421,4 +489,13 @@ class QtLabelSelectWidget(QWidget):
         self.grid_layout.setRowStretch(n_labels + 1, 1)
 
     def clear_labels(self):
-        pass
+        n_rows = len(self._label_buttons)
+
+        for label_index in range(n_rows):
+            for column in range(2):
+                grid_row = label_index + 2
+                layout = self.grid_layout.itemAtPosition(grid_row, column)
+                if layout is not None:
+                    layout.widget().deleteLater()
+                    self.grid_layout.removeItem(layout)
+        self._label_buttons = []
