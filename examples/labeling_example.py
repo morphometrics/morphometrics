@@ -69,7 +69,7 @@ sampled_measurements = sample_anndata(
 viewer = napari.Viewer()
 viewer.add_labels(label_image, metadata={"adata": measurement_data})
 
-widget = QtClusterAnnotatorWidget(viewer)
-viewer.window.add_dock_widget(widget)
+# widget = QtClusterAnnotatorWidget(viewer)
+# viewer.window.add_dock_widget(widget)
 
 napari.run()

@@ -215,9 +215,8 @@ class QtClusterAnnotatorWidget(QWidget):
     def _on_selected_sample(self):
         if self.model._sample_data is None:
             return
-        obs = self.model._sample_data.obs
-        non_empty_rows = obs.loc[obs[self.model._label_column] != ""]
-        n_labeled = len(non_empty_rows)
+        sample_annotation_table = self.model.sample_annotation_table
+        n_labeled = sample_annotation_table[self.model._label_column].count()
         progress = (n_labeled / self.model.n_samples) * 100
 
         # update the progress bar

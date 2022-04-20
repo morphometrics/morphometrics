@@ -3,6 +3,7 @@ from typing import List, Optional, Union
 
 import anndata
 import napari
+import numpy as np
 import pandas as pd
 from napari.utils.events import EmitterGroup, Event
 
@@ -144,7 +145,7 @@ class ClusterAnnotationModel:
             return
 
         if self._label_column not in self.annotation_table:
-            self.annotation_table[self._label_column] = ""
+            self.annotation_table[self._label_column] = np.nan
 
         if self._table_source == TableSource.ANNDATA:
             self._sample_data = sample_anndata(
