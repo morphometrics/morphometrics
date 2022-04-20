@@ -1,14 +1,16 @@
 import numpy as np
+import pytest
 
-from morphometrics._gui._qt import QtMeasurementWidget
+from morphometrics._gui._qt.annotation_widgets import QtClusterAnnotatorWidget
+from morphometrics._gui._qt.measurement_widgets import QtMeasurementWidget
 
 
 # make_napari_viewer is a pytest fixture that returns a napari viewer object
-# capsys is a pytest fixture that captures stdout and stderr output streams
-def test_example_q_widget(make_napari_viewer):
+@pytest.mark.parametrize("widget", [QtMeasurementWidget, QtClusterAnnotatorWidget])
+def test_creating_widget(make_napari_viewer, widget):
     # make viewer and add an image layer using our fixture
     viewer = make_napari_viewer()
     viewer.add_image(np.random.random((100, 100)))
 
     # create our widget, passing in the viewer
-    _ = QtMeasurementWidget(viewer)
+    _ = widget(viewer)
