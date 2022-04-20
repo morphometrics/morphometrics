@@ -6,7 +6,7 @@ import napari
 import pandas as pd
 from napari.utils.events import EmitterGroup, Event
 
-from ...explore.sample import sample_anndata
+from ...explore.sample import sample_anndata, sample_pandas
 
 
 class TableSource(Enum):
@@ -73,6 +73,40 @@ class ClusterAnnotationModel:
             return self._layer.features
 
     @property
+    def annotations(self) -> pd.Series:
+        """The annotations that have been added to the sampled data"""
+        if self._table_source == TableSource.ANNDATA:
+            return self._sample_data.obs[self._label_column]
+        else:
+            return self._sample_data[self._label_column]
+
+    @property
+    def annotation_table(self) -> pd.DataFrame:
+        """The full table to which the annotations are being added.
+
+        If the feature table is AnnData, returns obs.
+        If the feature table is a pandas DataFrame, returns the full dataframe.
+        """
+
+        if self._table_source == TableSource.ANNDATA:
+            return self.feature_table.obs
+        else:
+            return self.feature_table
+
+    @property
+    def sample_annotation_table(self) -> pd.DataFrame:
+        """The sample table to which the annotations are being added.
+
+        If the feature table is AnnData, returns obs.
+        If the feature table is a pandas DataFrame, returns the full dataframe.
+        """
+
+        if self._table_source == TableSource.ANNDATA:
+            return self._sample_data.obs
+        else:
+            return self._sample_data
+
+    @property
     def annotation_classes(self) -> List[Union[str, int]]:
         return self._annotation_classes
 
@@ -109,8 +143,8 @@ class ClusterAnnotationModel:
         if self.feature_table is None:
             return
 
-        if self._label_column not in self.feature_table.obs.columns:
-            self.feature_table.obs[self._label_column] = ""
+        if self._label_column not in self.annotation_table:
+            self.annotation_table[self._label_column] = ""
 
         if self._table_source == TableSource.ANNDATA:
             self._sample_data = sample_anndata(
@@ -119,11 +153,18 @@ class ClusterAnnotationModel:
                 n_samples_per_group=self._n_samples_per_group,
                 random_seed=self._random_seed,
             )
+        else:
+            self._sample_data = sample_pandas(
+                self.feature_table,
+                group_by=self._group_by,
+                n_samples_per_group=self._n_samples_per_group,
+                random_seed=self._random_seed,
+            )
 
     def _teardown_annotation(self):
         """After annotation has completed, add the annotations back into the original feature table."""
-        self._update_adata_obs(
-            self.feature_table.obs, self._sample_data.obs[self._label_column]
+        self._update_table(
+            self.annotation_table, self.sample_annotation_table[self._label_column]
         )
         self._sample_data = None
 
@@ -146,7 +187,11 @@ class ClusterAnnotationModel:
             return
         self._selected_sample = selected_sample
         selected_sample_row = self.selected_sample_row
-        label_value = selected_sample_row.obs["label"].values[0]
+
+        if self._table_source == TableSource.ANNDATA:
+            label_value = selected_sample_row.obs["label"].values[0]
+        else:
+            label_value = selected_sample_row["label"]
         self._layer.selected_label = label_value
 
         self.events.selected_sample()
@@ -221,10 +266,10 @@ class ClusterAnnotationModel:
         else:
             self.annotating = False
 
-    def _update_adata_obs(self, obs: pd.DataFrame, new_column: pd.Series):
+    def _update_table(self, df: pd.DataFrame, new_column: pd.Series):
         column_name = new_column.name
         for index, value in new_column.iteritems():
-            obs.at[index, column_name] = value
+            df.at[index, column_name] = value
 
     def _get_group_by_keys(self, combo_widget=None) -> List[str]:
         """Get the valid columns to group the features table by.
@@ -239,10 +284,8 @@ class ClusterAnnotationModel:
         """
         if self._layer is None:
             return []
-        if self._table_source == TableSource.ANNDATA:
-            return self.feature_table.obs.columns.tolist()
-        else:
-            return self.feature_table.columns.tolist()
+
+        return self.annotation_table.columns.tolist()
 
     def _validate_n_samples(
         self, group_by: Optional[str], n_samples_per_group: int
@@ -253,24 +296,19 @@ class ClusterAnnotationModel:
         """
         if self._layer is None:
             return False
-        obs = self.feature_table.obs
+
         if group_by is not None:
-            max_counts = obs[group_by].value_counts().min()
+            max_counts = self.annotation_table[group_by].value_counts().min()
         else:
-            max_counts = len(obs)
+            max_counts = len(self.annotation_table)
         return n_samples_per_group <= max_counts
 
     def _annotate_selected_sample(self, annotation_value):
         """Set the currently selected observation to the specified annotation value"""
-        if self._table_source == TableSource.ANNDATA:
-            annotation_table = self._sample_data.obs
-        else:
-            annotation_table = self._sample_data
-        annotation_table.iat[
+        self.sample_annotation_table.iat[
             self.selected_sample,
-            annotation_table.columns.get_loc(self._label_column),
+            self.sample_annotation_table.columns.get_loc(self._label_column),
         ] = annotation_value
-        print(self._sample_data.obs)
 
         self.events.sample_annotated()
         if self.auto_advance is True:
