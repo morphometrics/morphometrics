@@ -61,7 +61,7 @@ width="300"/>
 
 </td><td>
 
-[object classification](https://github.com/kevinyamauchi/morphometrics/blob/main/examples/object_classification_morphometrics.ipynb)
+[object classification](https://github.com/kevinyamauchi/morphometrics/blob/main/examples/object_classification.ipynb)
 
 </td></tr><tr><td>
 

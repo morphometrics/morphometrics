@@ -38,5 +38,6 @@ def available_measurments() -> List[str]:
     return [k for k in _measurements]
 
 
-from .label import regionprops
+from .intensity import measure_boundary_intensity, measure_internal_intensity
+from .label import measure_surface_properties_from_labels, regionprops
 from .measure import measure_all_with_defaults, measure_selected

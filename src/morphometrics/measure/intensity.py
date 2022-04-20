@@ -5,8 +5,10 @@ from skimage.measure import regionprops_table
 from ..types import IntensityImage, LabelImage, LabelMeasurementTable
 from ..utils.image_utils import make_boundary_mask
 from ..utils.math_utils import safe_divide
+from . import register_measurement
 
 
+@register_measurement(name="boundary_intensity", uses_intensity_image=True)
 def measure_boundary_intensity(
     label_image: LabelImage,
     intensity_image: IntensityImage,
@@ -38,12 +40,12 @@ def measure_boundary_intensity(
     boundary_mask = make_boundary_mask(
         label_image=label_image, boundary_dilation_size=boundary_dilation_size
     )
-    boudnary_labels = label_image.copy()
-    boudnary_labels[np.logical_not(boundary_mask)] = 0
+    boundary_labels = label_image.copy()
+    boundary_labels[np.logical_not(boundary_mask)] = 0
 
     # measure edge intensity
     intensity_measurements = regionprops_table(
-        label_image=boudnary_labels,
+        label_image=boundary_labels,
         intensity_image=intensity_image,
         properties=("label", "intensity_mean", "intensity_min", "intensity_max"),
     )
@@ -62,6 +64,7 @@ def measure_boundary_intensity(
     return pd.DataFrame(intensity_measurements).set_index("label")
 
 
+@register_measurement(name="internal_intensity", uses_intensity_image=True)
 def measure_internal_intensity(
     label_image: LabelImage,
     intensity_image: IntensityImage,

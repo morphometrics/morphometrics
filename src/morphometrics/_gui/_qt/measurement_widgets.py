@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
 )
 from superqt.collapsible import QCollapsible
 
-from ..measure import _measurements, measure_selected
+from morphometrics.measure import _measurements, measure_selected
 
 
 class QtSingleMeasurement(QWidget):
@@ -186,6 +186,5 @@ class QtMeasurementWidget(QWidget):
             measurement_selection=self.measurement_selection,
         )
 
-        print(measurement_table)
         self._label_image_layer.properties = measurement_table.reset_index()
         add_table(self._label_image_layer, self._viewer)

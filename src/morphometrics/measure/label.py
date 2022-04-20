@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from skimage.measure import regionprops_table
+from tqdm.autonotebook import tqdm
 
 from ..types import IntensityImage, LabelImage, LabelMeasurementTable
 from ..utils.surface_utils import binary_mask_to_surface
@@ -157,7 +158,9 @@ def ellipsoid_axis_lengths(table):
 
 @register_measurement(name="surface_properties_from_labels", uses_intensity_image=False)
 def measure_surface_properties_from_labels(
-    label_image: LabelImage, n_mesh_smoothing_interations: int = 50
+    label_image: LabelImage,
+    n_mesh_smoothing_interations: int = 10,
+    verbose: bool = True,
 ) -> LabelMeasurementTable:
     """Measure the surface properties of all objects in a label image by
     applying morphometrics.measure.surface.measure_surface_properties to
@@ -203,7 +206,7 @@ def measure_surface_properties_from_labels(
 
     all_label_indices = np.unique(label_image)
     mesh_records = []
-    for label_index in all_label_indices:
+    for label_index in tqdm(all_label_indices, disable=not (verbose)):
         if label_index == 0:
             # background is assumed to be label 0
             continue
