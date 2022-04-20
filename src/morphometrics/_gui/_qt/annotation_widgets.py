@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..models.annotation_model import ClusterAnnotationModel
+from ..models.annotation_model import ClusterAnnotationModel, TableSource
 
 LABEL_HOTKEYS = {
     0: "q",
@@ -70,6 +70,13 @@ class QtClusterAnnotatorWidget(QWidget):
             auto_call=True,
             call_button=False,
         )
+        self._feature_table_selection_widget = magicgui(
+            self._select_table_source,
+            table_source={"choices": self._table_table_source_choices},
+            auto_call=True,
+            call_button=False,
+        )
+
         self._layer_selection_widget()
 
         self._sample_selection_widget = QtSampleSelectWidget(
@@ -86,6 +93,7 @@ class QtClusterAnnotatorWidget(QWidget):
         # add widgets to the layout
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self._layer_selection_widget.native)
+        self.layout().addWidget(self._feature_table_selection_widget.native)
         self.layout().addWidget(self._start_annotating_widget.native)
         self.layout().addWidget(self._sample_selection_widget)
         self.layout().addWidget(self._label_widget)
@@ -108,6 +116,7 @@ class QtClusterAnnotatorWidget(QWidget):
 
     def _on_layer_update(self, event=None):
         """When the model updates the selected layer, update the relevant widgets."""
+        self._feature_table_selection_widget.reset_choices()
         self._start_annotating_widget.reset_choices()
 
     def _get_labels_layer(self, combo_widget):
@@ -119,6 +128,23 @@ class QtClusterAnnotatorWidget(QWidget):
             for layer in self._viewer.layers
             if (isinstance(layer, napari.layers.Labels)) and ("adata" in layer.metadata)
         ]
+
+    def _select_table_source(self, table_source: TableSource):
+        if table_source is None:
+            # if  table source is selectable, don't update the model
+            return
+        self.model.table_source = table_source
+
+    def _table_table_source_choices(self, combo_widget) -> List[TableSource]:
+        table_source_choices = []
+
+        if self.model.layer is not None:
+            if "adata" in self.model.layer.metadata:
+                table_source_choices.append(TableSource.ANNDATA.value)
+            if len(self.model.layer.features) > 0:
+                table_source_choices.append(TableSource.LAYER_FEATURES.value)
+
+        return table_source_choices
 
     def _on_annotation_classes(self, annotation_classes: List[str]):
         annotation_classes = self.model.annotation_classes

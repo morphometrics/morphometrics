@@ -27,7 +27,7 @@ class ClusterAnnotationModel:
         )
 
         self._layer = None
-        self._table_source = "anndata"
+        self._table_source = TableSource.LAYER_FEATURES
         self._label_column = "label_value"
         self._sample_data = None
         self._annotating = False
@@ -67,7 +67,7 @@ class ClusterAnnotationModel:
         if self._layer is None:
             return None
 
-        if self.table_source == TableSource.ANNDATA:
+        if self._table_source == TableSource.ANNDATA:
             return self._layer.metadata["adata"]
         else:
             return self._layer.features
@@ -112,7 +112,7 @@ class ClusterAnnotationModel:
         if self._label_column not in self.feature_table.obs.columns:
             self.feature_table.obs[self._label_column] = ""
 
-        if self.table_source == TableSource.ANNDATA:
+        if self._table_source == TableSource.ANNDATA:
             self._sample_data = sample_anndata(
                 self.feature_table,
                 group_by=self._group_by,
@@ -173,7 +173,7 @@ class ClusterAnnotationModel:
         if self._sample_data is None:
             return None
         else:
-            if self.table_source == TableSource.ANNDATA:
+            if self._table_source == TableSource.ANNDATA:
                 return self._sample_data[self.selected_sample, :]
             else:
                 return self._sample_data.iloc[self.selected_sample, :]
@@ -239,7 +239,10 @@ class ClusterAnnotationModel:
         """
         if self._layer is None:
             return []
-        return self.feature_table.obs.columns.tolist()
+        if self._table_source == TableSource.ANNDATA:
+            return self.feature_table.obs.columns.tolist()
+        else:
+            return self.feature_table.columns.tolist()
 
     def _validate_n_samples(
         self, group_by: Optional[str], n_samples_per_group: int
@@ -259,7 +262,7 @@ class ClusterAnnotationModel:
 
     def _annotate_selected_sample(self, annotation_value):
         """Set the currently selected observation to the specified annotation value"""
-        if self.table_source == TableSource.ANNDATA:
+        if self._table_source == TableSource.ANNDATA:
             annotation_table = self._sample_data.obs
         else:
             annotation_table = self._sample_data
