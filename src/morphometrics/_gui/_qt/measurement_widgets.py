@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
 )
 from superqt.collapsible import QCollapsible
 
-from ..measure import _measurements, measure_selected
+from morphometrics.measure import _measurements, measure_selected
 
 
 class QtSingleMeasurement(QWidget):

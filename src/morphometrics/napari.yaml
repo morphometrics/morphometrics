@@ -12,7 +12,7 @@ contributions:
       python_name: morphometrics._sample_data:make_cylinders_and_spheres
       title: Load sample 3D label image with cylinders and spheres
     - id: morphometrics.QtMeasurementWidget
-      python_name: morphometrics._qt.measurement_widgets:QtMeasurementWidget
+      python_name: morphometrics._gui._qt.measurement_widgets:QtMeasurementWidget
       title: Make region properties measurement widget
   sample_data:
     - command: morphometrics.make_simple_labeled_cube

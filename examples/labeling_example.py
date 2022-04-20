@@ -2,7 +2,7 @@ import anndata
 import napari
 import numpy as np
 
-from morphometrics._qt.clustering_widgets import QtClusterAnnotatorWidget
+from morphometrics._gui._qt.annotation_widgets import QtClusterAnnotatorWidget
 from morphometrics.data import cylinders_and_spheres
 from morphometrics.explore.cluster import cluster_features
 from morphometrics.explore.dimensionality_reduction import pca, umap

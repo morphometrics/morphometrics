@@ -1,7 +1,6 @@
 import napari
 import numpy as np
 
-from morphometrics._qt.measurement_widgets import QtMeasurementWidget
 from morphometrics.data import simple_labeled_cube
 from morphometrics.measure import available_measurments
 

@@ -1,6 +1,6 @@
 import numpy as np
 
-from morphometrics._qt.measurement_widgets import QtMeasurementWidget
+from morphometrics._gui._qt import QtMeasurementWidget
 
 
 # make_napari_viewer is a pytest fixture that returns a napari viewer object
