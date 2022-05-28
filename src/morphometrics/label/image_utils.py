@@ -57,10 +57,11 @@ def expand_selected_labels(
 
     kernel_size = cle.create([1, 1, 1])
 
+    # create a mask where the pixels the are allowed to expand are set to True
     expand_mask = cle.create_binary_like(gpu_labels)
     cle.equal_constant(gpu_labels, expand_mask, 0)
-    # cle.binary_or(expand_mask, labels_mask, expand_mask)
 
+    # create a label image containing only the labels that are allowed to expand
     for label_value in label_values_to_expand:
         cle.equal_constant(gpu_labels, labels_mask, label_value)
         cle.binary_or(expand_mask, labels_mask, expand_mask)
@@ -68,6 +69,7 @@ def expand_selected_labels(
     # create the labels to expand
     cle.multiply_images(gpu_labels, expand_mask, flip)
 
+    # perform the expansion
     for i in range(expansion_amount):
         # dilate the labels
         cle.onlyzero_overwrite_maximum_box(flip, kernel_size, flop)
@@ -76,6 +78,7 @@ def expand_selected_labels(
         # remove the expansion that occurred where other labels already are
         cle.multiply_images(flap, expand_mask, flip)
 
+    # insert the expanded labels back into the original immage
     cle.binary_not(expand_mask, labels_mask)
     cle.multiply_images(gpu_labels, labels_mask, expanded_labels)
     cle.add_images(expanded_labels, flip, expanded_labels)
