@@ -77,7 +77,6 @@ jobs:
           # pip install setuptools tox tox-gh-actions
           pip install setuptools wheel pytest pytest-cov pytest-benchmark pytest-qt pyqt5 pytest-xvfb
           pip install -e .
-          clinfo
       # this runs the platform-specific tests declared in tox.ini
       #- name: Install tox-conda
       #  run: pip install tox-conda
@@ -85,6 +84,11 @@ jobs:
       #  run: tox
       #  env:
       #    PLATFORM: ${{ matrix.platform }}
+      - name: Install ocl-icd-system
+        if: runner.os == 'Linux'
+        shell: bash -l {0}
+        run: |
+          conda install -y -c conda-forge ocl-icd-system
       - name: Test
         shell: bash -l {0}
         run: pytest -v --cov=./ --cov-report=xml
