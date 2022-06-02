@@ -1,0 +1,15 @@
+name: morphometrics
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - hdbscan
+  - pyopencl
+  - python-igraph
+  - pytables
+  - leidenalg
+  - pip>=22.0
+  - pip:
+    - morphometrics

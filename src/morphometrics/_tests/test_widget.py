@@ -3,11 +3,14 @@ import pytest
 
 import morphometrics
 from morphometrics._gui._qt.annotation_widgets import QtClusterAnnotatorWidget
+from morphometrics._gui._qt.labeling_widgets import QtLabelingWidget
 from morphometrics._gui._qt.measurement_widgets import QtMeasurementWidget
 
 
 # make_napari_viewer is a pytest fixture that returns a napari viewer object
-@pytest.mark.parametrize("widget", [QtMeasurementWidget, QtClusterAnnotatorWidget])
+@pytest.mark.parametrize(
+    "widget", [QtMeasurementWidget, QtClusterAnnotatorWidget, QtLabelingWidget]
+)
 def test_creating_widget(make_napari_viewer, widget):
     # make viewer and add an image layer using our fixture
     viewer = make_napari_viewer()
@@ -22,6 +25,7 @@ MY_PLUGIN_NAME = "morphometrics"
 MY_WIDGET_NAMES = [
     "Annotate clustered features",
     "Measure region properties",
+    "Curate labels",
 ]
 
 
