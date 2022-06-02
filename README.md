@@ -44,6 +44,21 @@ Once the environment has been created, you can activate it and use `morphometric
 conda activate morphometrics
 ```
 
+If you are on Mac OS or Linux install the following:
+
+Mac:
+
+```bash
+conda install -c conda-forge ocl_icd_wrapper_apple
+```
+
+Linux:
+
+```bash
+conda install -c conda-forge ocl-icd-system
+```
+
+
 ### Development installation
 
 To install latest development version :
