@@ -201,12 +201,16 @@ class QtLabelingWidget(QWidget):
             if isinstance(layer, napari.layers.Labels)
         ]
 
-    def _get_valid_image_layers(self, combo_box) -> List[napari.layers.Image]:
-        return [
+    def _get_valid_image_layers(self, combo_box) -> List[Optional[napari.layers.Image]]:
+
+        valid_layers = [
             layer
             for layer in self._viewer.layers
             if isinstance(layer, napari.layers.Image)
         ]
+        valid_layers.append(None)
+
+        return valid_layers
 
     def _on_start_curating(self):
         self._label_expansion_widget.native.setVisible(True)
