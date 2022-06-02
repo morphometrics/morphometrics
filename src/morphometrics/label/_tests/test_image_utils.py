@@ -1,7 +1,11 @@
 import numpy as np
 import pytest
 
-from morphometrics.label.image_utils import expand_selected_labels
+from morphometrics.label.image_utils import (
+    expand_bounding_box,
+    expand_selected_labels,
+    get_mask_bounding_box_3d,
+)
 from morphometrics.utils.environment_utils import on_ci
 
 
@@ -115,3 +119,39 @@ def test_expand_selected_labels_background_mask_3d():
 
     # check that label 2 was only expanded to the edge of the boundary mask
     assert np.sum(expanded_image == 2) == 10 ** 3
+
+
+def test_get_mask_bounding_box_3d():
+    mask_indices = np.array([[20, 30], [22, 32], [34, 44]])
+    expected_bounding_box = mask_indices.copy()
+    expected_bounding_box[:, 1] = expected_bounding_box[:, 1] - 1
+
+    mask_image = np.zeros((50, 50, 50), dtype=int)
+    mask_image[
+        mask_indices[0, 0] : mask_indices[0, 1],
+        mask_indices[1, 0] : mask_indices[1, 1],
+        mask_indices[2, 0] : mask_indices[2, 1],
+    ] = 1
+
+    bounding_box = get_mask_bounding_box_3d(mask_image)
+    np.testing.assert_allclose(bounding_box, expected_bounding_box)
+    assert bounding_box.dtype == np.int
+
+
+def test_expand_bounding_box():
+    bounding_box = np.array([[10, 20], [30, 40], [50, 60]])
+    expected_bounding_box = np.array([[7, 23], [27, 43], [47, 63]])
+    expanded_bounding_box = expand_bounding_box(
+        bounding_box=bounding_box, expansion_amount=3
+    )
+    np.testing.assert_equal(expanded_bounding_box, expected_bounding_box)
+
+
+def test_expand_bounding_box_with_clipping():
+    """Test that the bounding box is properly clipped to the image shape"""
+    bounding_box = np.array([[2, 20], [30, 40], [50, 60]])
+    expected_bounding_box = np.array([[0, 23], [27, 43], [47, 60]])
+    expanded_bounding_box = expand_bounding_box(
+        bounding_box=bounding_box, expansion_amount=3, image_shape=(61, 61, 61)
+    )
+    np.testing.assert_equal(expanded_bounding_box, expected_bounding_box)

@@ -1,9 +1,9 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pyclesperanto_prototype as cle
 
-from ..types import LabelImage
+from ..types import BinaryImage, LabelImage
 
 
 def expand_selected_labels(
@@ -92,3 +92,75 @@ def expand_selected_labels(
         expanded_label_image[background_mask] = 0
 
     return expanded_label_image
+
+
+def get_mask_bounding_box_3d(mask_image: BinaryImage) -> np.ndarray:
+    """Get the axis-aligned bounding box around the True values in a 3D mask.
+
+    Parameters
+    ----------
+    mask_image : BinaryImage
+        The binary image from which to calculate the bounding box.
+
+    Returns
+    -------
+    bounding_box : np.ndarray
+        The bounding box as an array where arranged:
+            [
+                [0_min, _max],
+                [1_min, 1_max],
+                [2_min, 2_max]
+            ]
+        where 0, 1, and 2 are the 0th, 1st, and 2nd dimensions,
+        respectively.
+    """
+    z = np.any(mask_image, axis=(1, 2))
+    y = np.any(mask_image, axis=(0, 2))
+    x = np.any(mask_image, axis=(0, 1))
+
+    z_min, z_max = np.where(z)[0][[0, -1]]
+    y_min, y_max = np.where(y)[0][[0, -1]]
+    x_min, x_max = np.where(x)[0][[0, -1]]
+
+    return np.array([[z_min, z_max], [y_min, y_max], [x_min, x_max]], dtype=int)
+
+
+def expand_bounding_box(
+    bounding_box: np.ndarray,
+    expansion_amount: int,
+    image_shape: Optional[Tuple[int]] = None,
+) -> np.ndarray:
+    """Expand a bounding box bidirectionally along each axis by a specified amount.
+
+    Parameters
+    ----------
+    bounding_box : np.ndarray
+        The bounding box as an array where arranged:
+            [
+                [0_min, _max],
+                [1_min, 1_max],
+                [2_min, 2_max]
+            ]
+        where 0, 1, and 2 are the 0th, 1st, and 2nd dimensions,
+        respectively.
+    expansion_amount : int
+        The number of pixels to expand the bounding box by in each direction
+    image_shape : Tuple[int]
+        The size of the image along each axis.
+
+    Returns
+    -------
+    expanded_bounding_box : np.ndarray
+        The expanded bounding box.
+    """
+    expanded_bounding_box = bounding_box.copy()
+    expanded_bounding_box[:, 0] = expanded_bounding_box[:, 0] - expansion_amount
+    expanded_bounding_box[:, 1] = expanded_bounding_box[:, 1] + expansion_amount
+
+    if image_shape is not None:
+        # max index is image_shape - 1
+        max_value = np.asarray(image_shape).reshape((3, 1)) - 1
+    else:
+        max_value = None
+
+    return np.clip(expanded_bounding_box, a_min=0, a_max=max_value)
