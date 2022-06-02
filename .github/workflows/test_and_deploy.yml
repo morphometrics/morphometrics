@@ -72,7 +72,7 @@ jobs:
         run: |
           python --version
           conda install -y pyopencl=2022.1.3
-          conda install -y -c conda-forge python-igraph pytables leidenalg
+          conda install -y -c conda-forge python-igraph pytables leidenalg pymeshfix
           conda install -y pip setuptools wheel pytest pytest-cov pytest-benchmark pytest-qt pyqt pytest-xvfb
           # python -m pip install --upgrade pip
           # pip install setuptools tox tox-gh-actions
