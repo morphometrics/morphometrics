@@ -23,11 +23,28 @@ https://napari.org/plugins/stable/index.html
 
 ## Installation
 
-You can install `morphometrics` via [pip]:
+### conda environment file
+You can install `morphometrics` via our conda environment file. To do so, first install anaconda or miniconda on
+your computer. Then, download the [`environment.yml file`](https://raw.githubusercontent.com/kevinyamauchi/morphometrics/master/environment.yml) (right click the link and "Save as..."). In your terminal,
+navigate to the directory you downloaded the `environment.yml` file to:
 
-    pip install morphometrics
+```bash
+cd <path/to/downloaded/environment.yml>
+```
 
+Then create the `morphometrics` environment using
 
+```bash
+conda env create -f environment.yml
+```
+
+Once the environment has been created, you can activate it and use `morphometrics` as described below.
+
+```bash
+conda activate morphometrics
+```
+
+### Development installation
 
 To install latest development version :
 
