@@ -9,7 +9,6 @@ from morphometrics.label.image_utils import (
 from morphometrics.utils.environment_utils import on_ci
 
 
-@pytest.mark.skipif(on_ci, reason="openCL tests not working on CI")
 def test_expand_selected_labels_2d():
     label_image = np.zeros((100, 100), dtype=int)
     label_image[30:70, 30:70] = 1
