@@ -1,4 +1,5 @@
 import numpy as np
+import pyclesperanto_prototype as cle
 import pytest
 
 from morphometrics.label.image_utils import (
@@ -23,6 +24,8 @@ def test_expand_selected_labels_2d():
     # check that the unexpanded labels were not expanded
     np.testing.assert_equal(label_image.shape, expanded_image.shape)
     np.testing.assert_equal(label_image == 1, expanded_image == 1)
+    cpu_devices = cle.available_device_names(dev_type="cpu")
+    print("Available CPU OpenCL devices:" + str(cpu_devices))
 
     assert expanded_image[50, 52] == 2
 
