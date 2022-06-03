@@ -122,11 +122,18 @@ def expand_selected_labels_using_crop(
     expanded_label_image : LabelImage
         The resulting label image with the selected labels expanded.
     """
+    if isinstance(label_values_to_expand, int):
+        # coerce int to list
+        label_values_to_expand = [label_values_to_expand]
     label_mask = np.zeros_like(label_image, dtype=bool)
     for label_value in label_values_to_expand:
         label_mask = np.logical_or(label_mask, label_image == label_value)
 
-    bounding_box_expansion = 2 * expansion_amount
+    if expansion_amount > 1:
+        bounding_box_expansion = 2 * expansion_amount
+    else:
+        # when expansion is 1, actual radius ends up being 3
+        bounding_box_expansion = 4
     bounding_box = get_mask_bounding_box_3d(label_mask)
     expanded_bounding_box = expand_bounding_box(
         bounding_box=bounding_box,
