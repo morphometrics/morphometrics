@@ -78,7 +78,7 @@ def expand_selected_labels(
         # remove the expansion that occurred where other labels already are
         cle.multiply_images(flap, expand_mask, flip)
 
-    # insert the expanded labels back into the original immage
+    # insert the expanded labels back into the original image
     cle.binary_not(expand_mask, labels_mask)
     cle.multiply_images(gpu_labels, labels_mask, expanded_labels)
     cle.add_images(expanded_labels, flip, expanded_labels)
@@ -92,6 +92,81 @@ def expand_selected_labels(
         expanded_label_image[background_mask] = 0
 
     return expanded_label_image
+
+
+def expand_selected_labels_using_crop(
+    label_image: LabelImage,
+    label_values_to_expand: Union[int, List[int]],
+    expansion_amount: int = 1,
+    background_mask: Optional[np.ndarray] = None,
+) -> LabelImage:
+    """Expand selected label values in a label image by cropping out the bounding box
+    surrounding the selected labels and performing the expansion on the crop.
+
+    Parameters
+    ----------
+    label_image : LabelImage
+        The label image to expand selected values in. Must be 2D or 3D.
+    label_values_to_expand : Union[int, List[int]]
+        The values in the label image that are allowed to expand.
+    expansion_amount : int
+        The radius of the expansion. Expansion is performed with equal
+        amounts in all directions.
+    background_mask : Optional[np.ndarray]
+        A boolean mask where True denotes background into which the labels
+        cannot be expanded. If None, the background mask is not applied.
+        Default value is None
+
+    Returns
+    -------
+    expanded_label_image : LabelImage
+        The resulting label image with the selected labels expanded.
+    """
+    label_mask = np.zeros_like(label_image, dtype=bool)
+    for label_value in label_values_to_expand:
+        label_mask = np.logical_or(label_mask, label_image == label_value)
+
+    bounding_box_expansion = 2 * expansion_amount
+    bounding_box = get_mask_bounding_box_3d(label_mask)
+    expanded_bounding_box = expand_bounding_box(
+        bounding_box=bounding_box,
+        expansion_amount=bounding_box_expansion,
+        image_shape=label_image.shape,
+    )
+
+    # extract a crop around the bounding box of the labels
+    expansion_crop = label_image[
+        expanded_bounding_box[0, 0] : expanded_bounding_box[0, 1],
+        expanded_bounding_box[1, 0] : expanded_bounding_box[1, 1],
+        expanded_bounding_box[2, 0] : expanded_bounding_box[2, 1],
+    ]
+
+    if background_mask is not None:
+        # crop the background mask
+        background_mask_crop = background_mask[
+            expanded_bounding_box[0, 0] : expanded_bounding_box[0, 1],
+            expanded_bounding_box[1, 0] : expanded_bounding_box[1, 1],
+            expanded_bounding_box[2, 0] : expanded_bounding_box[2, 1],
+        ]
+    else:
+        background_mask_crop = None
+
+    expanded_crop = expand_selected_labels(
+        label_image=expansion_crop,
+        label_values_to_expand=label_values_to_expand,
+        expansion_amount=expansion_amount,
+        background_mask=background_mask_crop,
+    )
+
+    # insert the expanded labels back into the original image
+    expanded_labels = label_image.copy()
+    expanded_labels[
+        expanded_bounding_box[0, 0] : expanded_bounding_box[0, 1],
+        expanded_bounding_box[1, 0] : expanded_bounding_box[1, 1],
+        expanded_bounding_box[2, 0] : expanded_bounding_box[2, 1],
+    ] = expanded_crop
+
+    return expanded_labels
 
 
 def get_mask_bounding_box_3d(mask_image: BinaryImage) -> np.ndarray:

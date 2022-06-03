@@ -1,17 +1,12 @@
 from typing import List, Optional
 
 import napari
-import numpy as np
 from magicgui import magicgui, widgets
 from napari.qt.threading import FunctionWorker, thread_worker
 from napari.types import LayerDataTuple
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
-from ...label.image_utils import (
-    expand_bounding_box,
-    expand_selected_labels,
-    get_mask_bounding_box_3d,
-)
+from ...label.image_utils import expand_selected_labels_using_crop
 from ..models.labeling_model import LabelingModel
 
 
@@ -49,6 +44,23 @@ class QtLabelingWidget(QWidget):
         labels_to_expand: str,
         expansion_amount: int = 3,
     ) -> FunctionWorker[LayerDataTuple]:
+        """
+
+        Parameters
+        ----------
+        pbar : widgets.ProgressBar
+            The progress bar to be displayed while the computation is running.
+            This is supplied by magicgui.
+        labels_to_expand : str
+            The label values to expand as a comma separated string.
+        expansion_amount : int
+            The radius of the expansion in pixels.
+
+        Returns
+        -------
+        function_worker : FunctionWorker[LayerDataTuple]
+            The FunctionWorker that will return the new labels layer data when the computation has completed.
+        """
         label_values_to_expand = labels_to_expand.replace(" ", "").split(",")
         label_values_to_expand = [int(value) for value in label_values_to_expand]
 
@@ -62,45 +74,12 @@ class QtLabelingWidget(QWidget):
 
         @thread_worker(connect={"returned": pbar.hide})
         def _expand_selected_labels() -> LayerDataTuple:
-            label_mask = np.zeros_like(label_image, dtype=bool)
-            for label_value in label_values_to_expand:
-                label_mask = np.logical_or(label_mask, label_image == label_value)
-
-            bounding_box_expansion = 2 * expansion_amount
-            bounding_box = get_mask_bounding_box_3d(label_mask)
-            expanded_bounding_box = expand_bounding_box(
-                bounding_box=bounding_box,
-                expansion_amount=bounding_box_expansion,
-                image_shape=label_image.shape,
-            )
-
-            expansion_crop = label_image[
-                expanded_bounding_box[0, 0] : expanded_bounding_box[0, 1],
-                expanded_bounding_box[1, 0] : expanded_bounding_box[1, 1],
-                expanded_bounding_box[2, 0] : expanded_bounding_box[2, 1],
-            ]
-
-            if background_mask is not None:
-                background_mask_crop = background_mask[
-                    expanded_bounding_box[0, 0] : expanded_bounding_box[0, 1],
-                    expanded_bounding_box[1, 0] : expanded_bounding_box[1, 1],
-                    expanded_bounding_box[2, 0] : expanded_bounding_box[2, 1],
-                ]
-            else:
-                background_mask_crop = None
-
-            expanded_crop = expand_selected_labels(
-                label_image=expansion_crop,
+            new_labels = expand_selected_labels_using_crop(
+                label_image=label_image,
                 label_values_to_expand=label_values_to_expand,
                 expansion_amount=expansion_amount,
-                background_mask=background_mask_crop,
+                background_mask=background_mask,
             )
-            new_labels = label_image.copy()
-            new_labels[
-                expanded_bounding_box[0, 0] : expanded_bounding_box[0, 1],
-                expanded_bounding_box[1, 0] : expanded_bounding_box[1, 1],
-                expanded_bounding_box[2, 0] : expanded_bounding_box[2, 1],
-            ] = expanded_crop
             layer_kwargs = {"name": label_layer_name}
             return (new_labels, layer_kwargs, "labels")
 
