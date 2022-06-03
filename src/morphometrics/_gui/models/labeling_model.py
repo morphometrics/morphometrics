@@ -11,7 +11,7 @@ class LabelingModel:
         )
         self._labels_layer = None
         self._background_mask_layer = None
-        self._curating = None
+        self._curating = False
 
     @property
     def labels_layer(self) -> Optional[napari.layers.Labels]:
