@@ -78,8 +78,24 @@ class LabelingModel:
         return self._curating
 
     @curating.setter
-    def curating(self, curating: bool):
+    def curating(self, curating: bool) -> None:
         if self._curating == curating:
             return
         self._curating = curating
         self.events.curating()
+
+    def set_paint_mode(self, n_edit_dimensions: int = 3) -> None:
+        """Set the labels layer to paint mode with a specified n_edit_dimensions
+
+        Sets the
+
+        Parameeters
+        -----------
+        n_edit_dimensions : int
+            The number of dimensions to be painted. Default value is 3.
+        """
+        if self.labels_layer is None:
+            return
+        self.labels_layer.n_edit_dimensions = n_edit_dimensions
+        self.labels_layer.preserve_labels = True
+        self.labels_layer.mode = "paint"

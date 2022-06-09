@@ -1,3 +1,4 @@
+# from functools import partial
 from typing import List, Optional
 
 import napari
@@ -173,11 +174,17 @@ class QtLabelingWidget(QWidget):
             print("off")
 
         button_list = [
+            # ButtonSpecification(
+            #   name="paint mode 2D", onClick=partial(self._model.set_paint_mode, n_edit_dimensions=2)
+            # ),
+            # ButtonSpecification(
+            #     name="paint mode 3D", onClick=partial(self._model.set_paint_mode, n_edit_dimensions=3)
+            # ),
             ButtonSpecification(
-                name="expand label", onClick=self._expand_menu_function
+                name="expand object", onClick=self._expand_menu_function
             ),
             ButtonSpecification(
-                name="delete label",
+                name="delete object",
                 onClick=self._delete_label_under_cursor,
                 onHoverTrue=hover,
                 onHoverFalse=unHover,
@@ -194,9 +201,14 @@ class QtLabelingWidget(QWidget):
             # Nothing to delete if there isn't a label under the coordinate
             return
         old_n_edit_dim = self._model.labels_layer.n_edit_dimensions
+        old_preserve_labels = self._model.labels_layer.preserve_labels
+        self._model.labels_layer.preserve_labels = False
         self._model.labels_layer.n_edit_dimensions = self._viewer.dims.ndisplay
         self._model.labels_layer.fill(self._menu_coordinate, 0)
+
+        # restore settings
         self._model.labels_layer.n_edit_dimensions = old_n_edit_dim
+        self._model.labels_layer.preserve_labels = old_preserve_labels
 
     def _get_label_coordinates_under_cursor(self):
         """Return the data coordinate of the first label under the cursor 2D or 3D.
@@ -230,10 +242,10 @@ class QtLabelingWidget(QWidget):
             coordinates = first_nonzero_coordinate(
                 self._model.labels_layer.data, start, end
             )
-            label_index = self._model.labels_layer.get_value(
-                position=cursor_position,
-                view_direction=view_direction,
-                dims_displayed=self._model.labels_layer._dims_displayed,
-                world=True,
-            )
+        label_index = self._model.labels_layer.get_value(
+            position=cursor_position,
+            view_direction=view_direction,
+            dims_displayed=self._model.labels_layer._dims_displayed,
+            world=True,
+        )
         return coordinates, label_index
