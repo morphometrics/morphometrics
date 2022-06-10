@@ -87,7 +87,7 @@ jobs:
       - name: Test
         shell: bash -l {0}
         run: |
-          pytest -v ./src/morphometrics/explore ./src/morphometrics/measure ./src/morphometrics/utils ./src/morphometrics/label/_tests --cov=./ --cov-report=xml
+          pytest -v ./src/morphometrics/_tests ./src/morphometrics/explore ./src/morphometrics/measure ./src/morphometrics/utils ./src/morphometrics/label/_tests --cov=./ --cov-report=xml
 
       - name: Coverage
         uses: codecov/codecov-action@v1
