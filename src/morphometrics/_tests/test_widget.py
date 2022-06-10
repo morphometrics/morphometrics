@@ -29,7 +29,6 @@ MY_WIDGET_NAMES = [
 ]
 
 
-@pytest.mark.skip()
 @pytest.mark.parametrize("widget_name", MY_WIDGET_NAMES)
 def test_something_with_viewer(widget_name, make_napari_viewer, napari_plugin_manager):
     napari_plugin_manager.register(morphometrics, name=MY_PLUGIN_NAME)
