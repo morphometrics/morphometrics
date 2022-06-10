@@ -71,7 +71,7 @@ jobs:
         run: |
           python --version
           conda install -y pyopencl pip setuptools wheel pytest pytest-cov pytest-benchmark pytest-qt pyqt pytest-xvfb pandas
-          conda install -c conda-forge -y python-igraph pytables leidenalg pymeshfix numpy
+          conda install -c conda-forge -y python-igraph pytables leidenalg pymeshfix numpy scanpy tqdm
           # pip install setuptools tox tox-gh-actions
 
           pip install -e .
