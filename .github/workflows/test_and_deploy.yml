@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
-        platform: [ubuntu-latest] # windows-latest and  disabled because pocl installation doesnt work
+        platform: [ubuntu-latest, macos-latest, windows-latest] # windows-latest and  disabled because pocl installation doesnt work
         python-version: [3.8, 3.9]
 
     steps:
@@ -88,7 +88,7 @@ jobs:
         shell: bash -l {0}
         run: |
           # openCL tests need to be run before napari tests
-          pytest -v ./src/morphometrics/label/_tests . ./src/morphometrics/explore  --cov=./ --cov-report=xml
+          pytest -v ./src/morphometrics/label/_tests .  --cov=./ --cov-report=xml
 
       - name: Coverage
         uses: codecov/codecov-action@v1
