@@ -8,6 +8,7 @@ from morphometrics._gui._qt.measurement_widgets import QtMeasurementWidget
 
 
 # make_napari_viewer is a pytest fixture that returns a napari viewer object
+@pytest.mark.skip()
 @pytest.mark.parametrize(
     "widget", [QtMeasurementWidget, QtClusterAnnotatorWidget, QtLabelingWidget]
 )
