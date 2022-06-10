@@ -6,11 +6,13 @@ name: tests
 on:
   push:
     branches:
+      - master
       - main
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
   pull_request:
     branches:
+      - master
       - main
   workflow_dispatch:
 
@@ -21,7 +23,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-latest] # windows-latest and macos-latest disabled because pocl installation doesnt work
-        python-version: [3.8]
+        python-version: [3.7, 3.8]
 
     steps:
       - uses: actions/checkout@v2
@@ -71,7 +73,7 @@ jobs:
         run: |
           python --version
           conda install -y pyopencl pip setuptools wheel pytest pytest-cov pytest-benchmark pytest-qt pyqt pytest-xvfb pandas
-          conda install -c conda-forge -y python-igraph pytables leidenalg pymeshfix numpy scanpy tqdm
+          conda install -c conda-forge -y python-igraph pytables leidenalg pymeshfix numpy
           # pip install setuptools tox tox-gh-actions
 
           pip install -e .
