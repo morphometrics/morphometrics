@@ -7,12 +7,10 @@ on:
   push:
     branches:
       - main
-      - main
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
   pull_request:
     branches:
-      - main
       - main
   workflow_dispatch:
 
@@ -22,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
+        platform: [ubuntu-latest, macos-latest, windows-latest] # windows-latest and  disabled because pocl installation doesnt work
         python-version: [3.8, 3.9]
 
     steps:
@@ -72,8 +70,8 @@ jobs:
         shell: bash -l {0}
         run: |
           python --version
-          conda install -y pip setuptools wheel pytest pytest-cov pytest-benchmark pytest-qt pyqt pytest-xvfb
-          conda install -c conda-forge -y pyclesperanto-prototype python-igraph pytables leidenalg pymeshfix numpy
+          conda install -y pyopencl pip setuptools wheel pytest pytest-cov pytest-benchmark pytest-qt pyqt pytest-xvfb pandas
+          conda install -c conda-forge -y python-igraph pytables leidenalg pymeshfix numpy
           # pip install setuptools tox tox-gh-actions
 
           pip install -e .
@@ -87,7 +85,8 @@ jobs:
       - name: Test
         shell: bash -l {0}
         run: |
-          pytest -v --cov=./ --cov-report=xml
+          # openCL tests need to be run before napari tests
+          pytest -v ./src/morphometrics/label/_tests .  --cov=./ --cov-report=xml
 
       - name: Coverage
         uses: codecov/codecov-action@v1
