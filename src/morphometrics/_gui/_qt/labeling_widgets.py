@@ -1,13 +1,17 @@
+# from functools import partial
 from typing import List, Optional
 
 import napari
 from magicgui import magicgui, widgets
+from napari.layers.labels._labels_utils import first_nonzero_coordinate
 from napari.qt.threading import FunctionWorker, thread_worker
 from napari.types import LayerDataTuple
+from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from ...label.image_utils import expand_selected_labels_using_crop
 from ..models.labeling_model import LabelingModel
+from .radial_menu import ButtonSpecification, RadialMenu
 
 
 class QtLabelingWidget(QWidget):
@@ -32,6 +36,8 @@ class QtLabelingWidget(QWidget):
             call_button="expand labels",
         )
         self._label_expansion_widget.native.setVisible(False)
+
+        self._radial_menu: Optional[RadialMenu] = None
 
         # add widgets to layout
         self.setLayout(QVBoxLayout())
@@ -119,8 +125,127 @@ class QtLabelingWidget(QWidget):
 
         return valid_layers
 
-    def _on_curating_change(self):
+    def _on_curating_change(self) -> None:
         if self._model.curating is True:
             self._label_expansion_widget.native.setVisible(True)
+            self._attach_viewer_callbacks()
         else:
             self._label_expansion_widget.native.setVisible(False)
+
+    def _attach_viewer_callbacks(self) -> None:
+        # callback for the radial manu
+        self._viewer.bind_key("a", self._open_radial_menu)
+
+    def _dettach_viewer_callbacks(self) -> None:
+        self._viewer.bind_key("a", None)
+
+    def _open_radial_menu(self, viewer: napari.viewer.Viewer):
+        global_position = QCursor.pos()
+        canvas_widget = viewer.window._qt_window._qt_viewer.canvas.native
+        canvas_widget_position = canvas_widget.mapFromGlobal(global_position)
+
+        if not (canvas_widget.rect().contains(canvas_widget_position)):
+            # only show the menu if the mouse is in the canvas
+            return
+
+        if self._radial_menu is not None:
+            self._radial_menu.kill()
+            self._radial_menu = None
+
+        (
+            self._menu_coordinate,
+            self._menu_label_index,
+        ) = self._get_label_coordinates_under_cursor()
+        if self._menu_coordinate is not None:
+            self._menu_label_value = self._model.labels_layer.get_value(
+                self._menu_coordinate
+            )
+        button_list = self._get_radial_menu_button_list()
+        self._radial_menu = RadialMenu(
+            canvas_widget, canvas_widget_position, buttonList=button_list
+        )
+        self._radial_menu.show()
+
+    def _get_radial_menu_button_list(self) -> List[ButtonSpecification]:
+        def hover():
+            print("on")
+
+        def unHover():
+            print("off")
+
+        button_list = [
+            # ButtonSpecification(
+            #   name="paint mode 2D", onClick=partial(self._model.set_paint_mode, n_edit_dimensions=2)
+            # ),
+            # ButtonSpecification(
+            #     name="paint mode 3D", onClick=partial(self._model.set_paint_mode, n_edit_dimensions=3)
+            # ),
+            ButtonSpecification(
+                name="expand object", onClick=self._expand_menu_function
+            ),
+            ButtonSpecification(
+                name="delete object",
+                onClick=self._delete_label_under_cursor,
+                onHoverTrue=hover,
+                onHoverFalse=unHover,
+            ),
+        ]
+        return button_list
+
+    def _expand_menu_function(self):
+        self._label_expansion_widget(labels_to_expand=str(self._menu_label_value))
+
+    def _delete_label_under_cursor(self) -> None:
+        """Delete the label currently under the cursor."""
+        if self._menu_coordinate is None:
+            # Nothing to delete if there isn't a label under the coordinate
+            return
+        old_n_edit_dim = self._model.labels_layer.n_edit_dimensions
+        old_preserve_labels = self._model.labels_layer.preserve_labels
+        self._model.labels_layer.preserve_labels = False
+        self._model.labels_layer.n_edit_dimensions = self._viewer.dims.ndisplay
+        self._model.labels_layer.fill(self._menu_coordinate, 0)
+
+        # restore settings
+        self._model.labels_layer.n_edit_dimensions = old_n_edit_dim
+        self._model.labels_layer.preserve_labels = old_preserve_labels
+
+    def _get_label_coordinates_under_cursor(self):
+        """Return the data coordinate of the first label under the cursor 2D or 3D.
+
+        In 2D, this is just the cursor position transformed by the layer's
+        world_to_data transform.
+
+        In 3D, a ray is cast in data coordinates, and the coordinate of the first
+        nonzero value along that ray is returned. If the ray only contains zeros,
+        None is returned.
+
+        Returns
+        -------
+        coordinates : array of int or None
+            The data coordinates for the first .
+        """
+        cursor_position = self._viewer.cursor.position
+        view_direction = self._viewer.camera.view_direction
+        ndim = len(self._model.labels_layer._dims_displayed)
+        if ndim == 2:
+            coordinates = self._model.labels_layer.world_to_data(cursor_position)
+        else:  # 3d
+            start, end = self._model.labels_layer.get_ray_intersections(
+                position=cursor_position,
+                view_direction=view_direction,
+                dims_displayed=self._model.labels_layer._dims_displayed,
+                world=True,
+            )
+            if start is None and end is None:
+                return None, None
+            coordinates = first_nonzero_coordinate(
+                self._model.labels_layer.data, start, end
+            )
+        label_index = self._model.labels_layer.get_value(
+            position=cursor_position,
+            view_direction=view_direction,
+            dims_displayed=self._model.labels_layer._dims_displayed,
+            world=True,
+        )
+        return coordinates, label_index
