@@ -7,6 +7,7 @@ from morphometrics.label.image_utils import (
     expand_selected_labels,
     expand_selected_labels_using_crop,
     get_mask_bounding_box_3d,
+    touch_matrix_from_label_image,
 )
 from morphometrics.utils.environment_utils import on_ci, on_macos, on_windows
 
@@ -41,7 +42,7 @@ def test_expand_selected_labels_2d():
     np.testing.assert_equal(label_image == 1, expanded_image_2 == 1)
 
     # check that the entire void was filled with 2
-    assert np.sum(expanded_image_2 == 2) == 10 ** 2
+    assert np.sum(expanded_image_2 == 2) == 10**2
 
 
 @pytest.mark.skipif(
@@ -71,7 +72,7 @@ def test_expand_selected_labels_3d():
     np.testing.assert_equal(label_image == 1, expanded_image_2 == 1)
 
     # check that the entire void was filled with 2
-    assert np.sum(expanded_image_2 == 2) == 10 ** 3
+    assert np.sum(expanded_image_2 == 2) == 10**3
 
 
 @pytest.mark.skipif(
@@ -108,7 +109,7 @@ def test_expand_selected_labels_background_mask_2d():
     np.testing.assert_equal(label_image.shape, expanded_image.shape)
 
     # check that label 2 was only expanded to the edge of the boundary mask
-    assert np.sum(expanded_image == 2) == 10 ** 2
+    assert np.sum(expanded_image == 2) == 10**2
 
 
 @pytest.mark.skipif(
@@ -132,7 +133,7 @@ def test_expand_selected_labels_background_mask_3d():
     np.testing.assert_equal(label_image.shape, expanded_image.shape)
 
     # check that label 2 was only expanded to the edge of the boundary mask
-    assert np.sum(expanded_image == 2) == 10 ** 3
+    assert np.sum(expanded_image == 2) == 10**3
 
 
 def test_get_mask_bounding_box_3d():
@@ -198,9 +199,29 @@ def test_expand_selected_labels_using_crop_3d():
     np.testing.assert_equal(label_image == 1, expanded_image_2 == 1)
 
     # check that the entire void was filled with 2
-    assert np.sum(expanded_image_2 == 2) == 10 ** 3
+    assert np.sum(expanded_image_2 == 2) == 10**3
 
     # test that the bounding box doesn't extend beyond the image
     _ = expand_selected_labels_using_crop(
         label_image=label_image, label_values_to_expand=3, expansion_amount=5
     )
+
+
+@pytest.mark.skipif(
+    on_ci and (on_windows or on_macos), reason="openCL doesn't work on windows/mac CI"
+)
+def test_touch_matrix_from_label_image():
+    im_width = 100
+    im_height = 100
+    im = np.zeros((im_height, im_width), dtype=int)
+
+    im[0:50, 0:50] = 0
+    im[0:50, 50:im_width] = 1
+    im[50:im_height, 50:im_width] = 2
+    im[50:im_height, 0:50] = 3
+
+    touch_matrix, background_mask = touch_matrix_from_label_image(im)
+
+    expected_touch_matrix = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
+    np.testing.assert_equal(touch_matrix.todense(), expected_touch_matrix)
+    np.testing.assert_equal(background_mask, [True, False, True])

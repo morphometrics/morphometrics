@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import pyclesperanto_prototype as cle
+from scipy.sparse import csr_matrix
 
 from ..types import BinaryImage, LabelImage
 
@@ -246,3 +247,55 @@ def expand_bounding_box(
         max_value = None
 
     return np.clip(expanded_bounding_box, a_min=0, a_max=max_value)
+
+
+def _lower_triangle_to_full_array(lower_triangle_array: np.ndarray) -> np.ndarray:
+    """Convert a 2D lower triangle array into a full array.
+
+    Parameters
+    ----------
+    lower_triangle_array : np.ndarray
+        The lower triangle array to fill in.
+
+    Returns
+    -------
+    full_array : np.ndarray
+        The filled in array. Has the same dimensions as input array.
+    """
+    # create the array by flipping the lower half
+    full_array = lower_triangle_array.T + lower_triangle_array
+    idx = np.arange(lower_triangle_array.shape[0])
+
+    # add in the diagonal elements
+    full_array[idx, idx] = lower_triangle_array[idx, idx]
+    return full_array
+
+
+def touch_matrix_from_label_image(
+    label_image: LabelImage,
+) -> Tuple[csr_matrix, np.ndarray]:
+    """Create a touch matrix from a label image.
+
+    The touch matrix is only between labeled components. Background is assumed to be 0.
+
+    Parameters
+    ----------
+    label_image : LabelImage
+        The label image to generate the touch matrix from.
+
+    Returns
+    -------
+    touch_matrix : csr_matrix
+        The touch matrix in a sparse array.
+    touches_background_mask : np.ndarray
+        Boolean mask
+    """
+    # get the touch matrix and expand to a full matrix
+    lower_triangle_touch_matrix = np.asarray(cle.generate_touch_matrix(label_image))
+    full_touch_matrix = _lower_triangle_to_full_array(lower_triangle_touch_matrix)
+
+    # get the touch matrix without the background touches
+    touch_matrix = csr_matrix(full_touch_matrix[1:, 1:])
+    touches_background_mask = full_touch_matrix[1:, 0].astype(bool)
+
+    return touch_matrix, touches_background_mask
