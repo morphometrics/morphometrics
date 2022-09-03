@@ -210,7 +210,7 @@ def test_expand_selected_labels_using_crop_3d():
 @pytest.mark.skipif(
     on_ci and (on_windows or on_macos), reason="openCL doesn't work on windows/mac CI"
 )
-def test_touch_matrix_from_label_image():
+def test_touch_matrix_from_label_image_2d():
     im_width = 100
     im_height = 100
     im = np.zeros((im_height, im_width), dtype=int)
