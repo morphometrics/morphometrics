@@ -79,7 +79,7 @@ def _convert_neighborhood_measurement_array_to_table(
 
 
 def calculate_neighborhood_statistics(
-    neighborhood_graph: Union[csr_matrix, csc_matrix, np.ndarray],
+    neighbor_graph: Union[csr_matrix, csc_matrix, np.ndarray],
     measurements: pd.DataFrame,
     include_self_in_neighborhood: bool = True,
 ) -> pd.DataFrame:
@@ -97,7 +97,7 @@ def calculate_neighborhood_statistics(
 
     Parameters
     ----------
-    neighborhood_graph : Union[csr_matrix, csc_matrix, np.ndarray]
+    neighbor_graph : Union[csr_matrix, csc_matrix, np.ndarray]
         The graph encoding the neighborhoods. Should be symmetric
         and undirected.
     measurements : pd.DataFrame
@@ -112,11 +112,12 @@ def calculate_neighborhood_statistics(
         The original measurements appended with the neighborhood statistics.
         Neighborhood statistics are stored as {measurment_name}_{statistic_name}.
     """
-    if issparse(neighborhood_graph):
-        neighborhood_graph = neighborhood_graph.toarray()
+    if issparse(neighbor_graph):
+        neighbor_graph = neighbor_graph.toarray()
 
     # set the "self" included in neighborhood as requested
-    neighbor_graph = neighborhood_graph.copy()
+    # make a copy to prevent mutating the input array
+    neighbor_graph = neighbor_graph.copy()
     if include_self_in_neighborhood is True:
         np.fill_diagonal(neighbor_graph, 1)
     else:

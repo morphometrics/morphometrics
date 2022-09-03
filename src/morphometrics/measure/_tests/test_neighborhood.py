@@ -46,12 +46,14 @@ def test_calculate_neighborhood_statistics_no_self(neighbor_graph):
     """test calculating neighborhood statistics when self isn't included
     in the neighbhood.
     """
+    initial_neighbor_graph = neighbor_graph.copy()
+
     measurements_array = np.array([[1, 1], [0.5, 2], [0, 3]])
     measurement_table = pd.DataFrame(
         measurements_array, columns=["measurement_0", "measurement_1"]
     )
     neighborhood_measurement = calculate_neighborhood_statistics(
-        neighborhood_graph=neighbor_graph,
+        neighbor_graph=neighbor_graph,
         measurements=measurement_table,
         include_self_in_neighborhood=False,
     )
@@ -65,6 +67,12 @@ def test_calculate_neighborhood_statistics_no_self(neighbor_graph):
         expected_means, neighborhood_measurement["measurement_0_mean"].values
     )
 
+    # verify the original neighbor graph wasn't mutated
+    if isinstance(initial_neighbor_graph, np.ndarray):
+        np.testing.assert_allclose(neighbor_graph, initial_neighbor_graph)
+    else:
+        np.testing.assert_allclose(neighbor_graph.A, initial_neighbor_graph.A)
+
 
 @pytest.mark.parametrize(
     "neighbor_graph",
@@ -76,15 +84,17 @@ def test_calculate_neighborhood_statistics_no_self(neighbor_graph):
     ],
 )
 def test_calculate_neighborhood_statistics_with_self(neighbor_graph):
-    """test calculating neighborhood statistics when self isn't included
+    """test calculating neighborhood statistics when self is included
     in the neighbhood.
     """
+    initial_neighbor_graph = neighbor_graph.copy()
+
     measurements_array = np.array([[1, 1], [0.5, 2], [0, 3]])
     measurement_table = pd.DataFrame(
         measurements_array, columns=["measurement_0", "measurement_1"]
     )
     neighborhood_measurement = calculate_neighborhood_statistics(
-        neighborhood_graph=neighbor_graph,
+        neighbor_graph=neighbor_graph,
         measurements=measurement_table,
         include_self_in_neighborhood=True,
     )
@@ -97,3 +107,9 @@ def test_calculate_neighborhood_statistics_with_self(neighbor_graph):
     np.testing.assert_allclose(
         expected_means, neighborhood_measurement["measurement_0_mean"].values
     )
+
+    # verify the original neighbor graph wasn't mutated
+    if isinstance(initial_neighbor_graph, np.ndarray):
+        np.testing.assert_allclose(neighbor_graph, initial_neighbor_graph)
+    else:
+        np.testing.assert_allclose(neighbor_graph.A, initial_neighbor_graph.A)
