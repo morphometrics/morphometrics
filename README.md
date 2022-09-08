@@ -1,10 +1,10 @@
 # morphometrics
 
-[![License](https://img.shields.io/pypi/l/morphometrics.svg?color=green)](https://github.com/kevinyamauchi/morphometrics/raw/main/LICENSE)
+[![License](https://img.shields.io/pypi/l/morphometrics.svg?color=green)](https://github.com/morphometrics/morphometrics/raw/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/morphometrics.svg?color=green)](https://pypi.org/project/morphometrics)
 [![Python Version](https://img.shields.io/pypi/pyversions/morphometrics.svg?color=green)](https://python.org)
-[![tests](https://github.com/kevinyamauchi/morphometrics/workflows/tests/badge.svg)](https://github.com/kevinyamauchi/morphometrics/actions)
-[![codecov](https://codecov.io/gh/kevinyamauchi/morphometrics/branch/main/graph/badge.svg)](https://codecov.io/gh/kevinyamauchi/morphometrics)
+[![tests](https://github.com/morphometrics/morphometrics/workflows/tests/badge.svg)](https://github.com/morphometrics/morphometrics/actions)
+[![codecov](https://codecov.io/gh/morphometrics/morphometrics/branch/main/graph/badge.svg)](https://codecov.io/gh/morphometrics/morphometrics)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/morphometrics)](https://napari-hub.org/plugins/morphometrics)
 
 A plugin for quantifying shape and neighborhoods from images.
