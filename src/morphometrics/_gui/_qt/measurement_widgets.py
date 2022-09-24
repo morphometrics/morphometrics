@@ -29,6 +29,9 @@ class QtSingleMeasurement(QWidget):
         self.layout().addWidget(self._check_box)
         self.layout().addWidget(self._label_widget)
 
+        self.layout().setSpacing(0)
+        self.layout().setContentsMargins(0,0,0,0)
+
     @property
     def measurement_name(self) -> str:
         return self._measurement_name
@@ -52,6 +55,12 @@ class QtMeasurementSet(QWidget):
 
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self._measurement_section)
+
+        self.layout().setSpacing(0)
+        self.layout().setContentsMargins(0,0,0,0)
+
+        self._measurement_section.layout().layout().setSpacing(0)
+        self._measurement_section.layout().setContentsMargins(0,0,0,0)
 
     @property
     def measurement_name(self) -> str:
