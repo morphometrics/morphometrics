@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 from skimage import measure
@@ -8,7 +8,8 @@ from skimage.transform import resize
 def post_process_image(
     segmented_image: np.ndarray,
     threshold: int,
-    segmentation_mask: Optional[np.ndarray] = None,
+    segmentation_mask: Optional[np.ndarray] = np.zeros(1),
+    shape: Optional[List] = None,
 ):
     """
     Post-processing the segmented image.
@@ -20,7 +21,7 @@ def post_process_image(
     threshold: int
         the minimal number of pixels, representing the minimal size of objects that we keep.
         Any objects smaller than that size will be deleted (pixel value set to 0).
-    segmentation_mask: Optional[np.ndarray] = None
+    segmentation_mask: Optional[np.ndarray] = np.zeros(1)
         A mask set to non-zero in the regions where segmentation should be kept.
         All other pixels are set to 0.
 
@@ -30,10 +31,12 @@ def post_process_image(
         the post-processed image
     """
     # resize the segmented image to match the mask size
-    if segmentation_mask:
+    if segmentation_mask.any():
         resized_image = resize(segmented_image, segmentation_mask.shape, order=0)
         # mask the background
         resized_image[np.invert(segmentation_mask.astype(bool))] = 0
+    else:
+        resized_image = resize(segmented_image, shape, order=0)
 
     # filter out the segmented objects blow the threshold size
     labeled = measure.label(resized_image)
