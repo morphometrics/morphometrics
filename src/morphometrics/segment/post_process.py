@@ -8,7 +8,7 @@ from skimage.transform import resize
 def post_process_image(
     segmented_image: np.ndarray,
     threshold: int,
-    segmentation_mask: Optional[np.ndarray] = np.zeros(1),
+    segmentation_mask: Optional[np.ndarray] = None,
     shape: Optional[List] = None,
 ):
     """
@@ -21,9 +21,12 @@ def post_process_image(
     threshold: int
         the minimal number of pixels, representing the minimal size of objects that we keep.
         Any objects smaller than that size will be deleted (pixel value set to 0).
-    segmentation_mask: Optional[np.ndarray] = np.zeros(1)
+    segmentation_mask: Optional[np.ndarray] = None
         A mask set to non-zero in the regions where segmentation should be kept.
         All other pixels are set to 0.
+    shape: Optional[List] = None
+        the initial shape of the image, to resize the rescaled image back to its initial size,
+        since we need to filter the size upon threshold, which is the number of pixels.
 
     Returns
     -------
@@ -31,7 +34,7 @@ def post_process_image(
         the post-processed image
     """
     # resize the segmented image to match the mask size
-    if segmentation_mask.any():
+    if segmentation_mask is not None:
         resized_image = resize(segmented_image, segmentation_mask.shape, order=0)
         # mask the background
         resized_image[np.invert(segmentation_mask.astype(bool))] = 0

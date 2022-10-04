@@ -10,7 +10,7 @@ from plantseg.pipeline.raw2seg import raw2seg
 from stardist.models import StarDist3D
 
 
-def load_to_disk(preprocessed_image):
+def _save_to_disk(preprocessed_image):
     """
     If args.model == plant-seg,
     create a directory and write the preprocessed image in it, for raw2seg() to call (raw2seg() requires to load images from disk).
@@ -37,7 +37,7 @@ def load_to_disk(preprocessed_image):
     return preprocessed_path
 
 
-def make_config(preprocessed_image):
+def _make_plantseg_config(preprocessed_image):
     """
     If args.model == plant-seg,
     make the plantseg default yaml or local (with file name "config.yaml") configuration.
@@ -59,7 +59,7 @@ def make_config(preprocessed_image):
         url = "https://raw.githubusercontent.com/hci-unihd/plant-seg/master/examples/config.yaml"
         file = wget.download(url)
     config = yaml.load(open(file), Loader=yaml.FullLoader)
-    config["path"] = load_to_disk(preprocessed_image)
+    config["path"] = _save_to_disk(preprocessed_image)
 
     return config
 
@@ -83,7 +83,7 @@ def segment(model, preprocessed_image):
     """
     if model == "plant-seg":
         # do plant-seg segmentation
-        config = make_config(preprocessed_image)
+        config = _make_plantseg_config(preprocessed_image)
         raw2seg(config)  # outputs to disk
         # load from disk
         # this is the path using default plantseg parameters, if made changeble should ajust here as well

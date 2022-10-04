@@ -2,10 +2,12 @@ import argparse
 import os
 from timeit import default_timer as timer
 
-import numpy as np
 import tifffile
 
-from ..segment import post_process, pre_process, prepare_image, segment
+from .load_czi import load_czi
+from .post_process import post_process_image
+from .pre_process import pre_process_image
+from .segment import segment
 
 
 def segmentation_parser():
@@ -69,31 +71,37 @@ def main():
         all_masks = os.listdir(args.maskdir)
 
         for image, mask in zip(all_images, all_masks):
-            timer1 = timer()
+            start = timer()
             raw_image = tifffile.imread(os.path.join(args.datadir, image))
-            timer2 = timer()
-            print(f"raw data read successful, cost {timer2 - timer1}s")
+            read_finish_time = timer()
+            print(f"raw data read successful, cost {read_finish_time - start}s")
 
             # process 1 image
             segmentation_mask = tifffile.imread(os.path.join(args.maskdir, mask))
-            preprocessed_image = pre_process.pre_process_image(
+            preprocessed_image = pre_process_image(
                 raw_image,
                 args.raw_pixel_size,
                 args.target_pixel_size,
                 segmentation_mask,
             )
-            timer3 = timer()
-            print(f"preprocessing successful, cost {timer3 - timer2}s")
+            preprocess_finish_time = timer()
+            print(
+                f"preprocessing successful, cost {preprocess_finish_time - read_finish_time}s"
+            )
 
             segmented_image = segment(args.model, preprocessed_image)
-            timer4 = timer()
-            print(f"segmentation successful, cost {timer4 - timer3}s")
+            segment_finish_time = timer()
+            print(
+                f"segmentation successful, cost {segment_finish_time - preprocess_finish_time}s"
+            )
 
-            postprocessed_image = post_process.post_process_image(
+            postprocessed_image = post_process_image(
                 segmented_image, args.threshold, segmentation_mask
             )
-            timer5 = timer()
-            print(f"postprocessing successful, cost {timer5 - timer4}s")
+            postprocess_finish_time = timer()
+            print(
+                f"postprocessing successful, cost {postprocess_finish_time - segment_finish_time}s"
+            )
 
             # save
             tifffile.imwrite(
@@ -103,26 +111,32 @@ def main():
 
     if args.model == "stardist":
         for image in all_images:
-            timer1 = timer()
-            raw_image = prepare_image.prepare_image(os.path.join(args.datadir, image))
-            timer2 = timer()
-            print(f"raw data read successful, cost {timer2 - timer1}s")
+            start = timer()
+            raw_image = load_czi(os.path.join(args.datadir, image))
+            read_finish_time = timer()
+            print(f"raw data read successful, cost {read_finish_time - start}s")
 
-            preprocessed_image = pre_process.pre_process_image(
+            preprocessed_image = pre_process_image(
                 raw_image, args.raw_pixel_size, args.target_pixel_size
             )
-            timer3 = timer()
-            print(f"preprocessing successful, cost {timer3 - timer2}s")
+            preprocess_finish_time = timer()
+            print(
+                f"preprocessing successful, cost {preprocess_finish_time - read_finish_time}s"
+            )
 
             segmented_image = segment(args.model, preprocessed_image)
-            timer4 = timer()
-            print(f"segmentation successful, cost {timer4 - timer3}s")
-
-            postprocessed_image = post_process.post_process_image(
-                segmented_image, args.threshold, np.zeros(1), raw_image.shape
+            segment_finish_time = timer()
+            print(
+                f"segmentation successful, cost {segment_finish_time - preprocess_finish_time}s"
             )
-            timer5 = timer()
-            print(f"postprocessing successful, cost {timer5 - timer4}s")
+
+            postprocessed_image = post_process_image(
+                segmented_image, args.threshold, None, raw_image.shape
+            )
+            postprocess_finish_time = timer()
+            print(
+                f"postprocessing successful, cost {postprocess_finish_time - segment_finish_time}s"
+            )
 
             # save
             name = image.strip("").replace("czi", "tif")

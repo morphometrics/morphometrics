@@ -9,7 +9,7 @@ def pre_process_image(
     raw_image: np.ndarray,
     raw_pixel_size: List[float],
     target_pixel_size: List[float],
-    segmentation_mask: Optional[np.ndarray] = np.zeros(1),
+    segmentation_mask: Optional[np.ndarray] = None,
 ):
     """Prepare an image for segmentation.
 
@@ -22,7 +22,7 @@ def pre_process_image(
         The pixel size in each dimension of the raw image.
     target_pixel_size : List[float]
         The pixel size in each dimension of the segmentaton model was trained on.
-    segmentation_mask : Optional[np.ndarray] = np.zeros(1)
+    segmentation_mask : Optional[np.ndarray] = None
         A mask set to non-zero in the regions where segmentation should be performed.
         All other pixels are set to 0.
 
@@ -32,7 +32,7 @@ def pre_process_image(
         The pre-processed image.
     """
     # mask the tissue
-    if segmentation_mask.any():
+    if segmentation_mask is not None:
         raw_image[np.invert(segmentation_mask.astype(bool))] = 0
 
     # calculate the scale factor for the pixel size
