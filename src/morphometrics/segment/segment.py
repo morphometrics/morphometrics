@@ -53,7 +53,7 @@ def _make_plantseg_config(preprocessed_image):
         the user-defined configuration
     """
 
-    file = r".\config.yaml"
+    file = r"./plantseg_original_config.yaml"
     if not os.path.exists(file):
         # if no local configuration, load the plant-seg example yaml file from github
         url = "https://raw.githubusercontent.com/hci-unihd/plant-seg/master/examples/config.yaml"
