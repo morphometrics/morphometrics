@@ -44,6 +44,13 @@ def segmentation_parser():
         help="The model used for segmentation. Availabel options: plant-seg, stardist.",
     )
     parser.add_argument(
+        "--channel",
+        nargs="?",
+        help='Specify which staining channel to segment upon, availabel options: DAPI, Alexa488, Alexa568, Alexa647.\
+              DAPI stains the cell nuclei, for more information regarding the target protein of other 3 stains, \
+              please refer to the metadata in "GeneralDescription.txt".',
+    )
+    parser.add_argument(
         "--target_pixel_size",
         required=True,
         help="Target pixel size of the input images of the selected algorithm.",
@@ -112,7 +119,7 @@ def main():
     if args.model == "stardist":
         for image in all_images:
             start = timer()
-            raw_image = load_czi(os.path.join(args.datadir, image))
+            raw_image = load_czi(os.path.join(args.datadir, image), args.channel)
             read_finish_time = timer()
             print(f"raw data read successful, cost {read_finish_time - start}s")
 
