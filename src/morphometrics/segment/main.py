@@ -8,7 +8,7 @@ import tifffile
 from ..segment import post_process, pre_process, prepare_image, segment
 
 
-def parser():
+def segmentation_parser():
     """
     Define the parameters for the segmentation pipeline.
 
@@ -57,7 +57,7 @@ def parser():
 
 
 def main():
-    args = parser()
+    args = segmentation_parser()
 
     # all_images = glob.iglob(f'{args.datadir}/*')
     all_images = os.listdir(args.datadir)
