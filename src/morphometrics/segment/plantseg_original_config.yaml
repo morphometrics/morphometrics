@@ -1,3 +1,6 @@
+# This yaml file is downloaded from: https://github.com/hci-unihd/plant-seg/blob/1abcdb7b565049b4b67650aa3541d122712e52f0/examples/config.yaml
+
+
 # Contains the path to the directory or file to process
 path:
 
