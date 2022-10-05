@@ -4,10 +4,10 @@ from timeit import default_timer as timer
 
 import tifffile
 
-from .load_czi import load_czi
-from .post_process import post_process_image
-from .pre_process import pre_process_image
-from .segment import segment
+from morphometrics.segment.load_czi import load_czi
+from morphometrics.segment.post_process import post_process_image
+from morphometrics.segment.pre_process import pre_process_image
+from morphometrics.segment.segment import segment
 
 
 def segmentation_parser():
@@ -36,7 +36,11 @@ def segmentation_parser():
                                 For plant-seg pipeline, it is required while for stardist it is not.",
     )
     parser.add_argument(
-        "--raw_pixel_size", required=True, help="Raw pixel size of the image."
+        "--raw_pixel_size",
+        nargs="*",
+        type=float,
+        required=True,
+        help="Raw pixel size of the image. No comma should be included in the input. Example input: 0.5 0.5 0.5",
     )
     parser.add_argument(
         "--model",
@@ -52,11 +56,14 @@ def segmentation_parser():
     )
     parser.add_argument(
         "--target_pixel_size",
+        nargs="*",
+        type=float,
         required=True,
-        help="Target pixel size of the input images of the selected algorithm.",
+        help="Target pixel size of the input images for the selected pretrained model. No comma should be included in the input. Example input: 0.5 0.5 0.5",
     )
     parser.add_argument(
         "--threshold",
+        type=int,
         required=True,
         help="Size threshold of the cell in the number of pixels, any cell smaller than the threshold will be deleted.",
     )
