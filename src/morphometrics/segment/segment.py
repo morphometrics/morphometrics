@@ -64,7 +64,7 @@ def _make_plantseg_config(preprocessed_image):
     return config
 
 
-def segment(model, preprocessed_image):
+def segment(model, preprocessed_image, n_tiles=None):
     """
     Perform segmentation using different models.
 
@@ -101,6 +101,8 @@ def segment(model, preprocessed_image):
     if model == "stardist":
         # do stardist segmentation
         model = StarDist3D.from_pretrained("3D_demo")
-        segmented_image, details = model.predict_instances(preprocessed_image)
+        segmented_image, details = model.predict_instances(
+            preprocessed_image, n_tiles=n_tiles
+        )
 
     return segmented_image

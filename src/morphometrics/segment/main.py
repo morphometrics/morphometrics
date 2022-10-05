@@ -62,6 +62,13 @@ def segmentation_parser():
         help="Target pixel size of the input images for the selected pretrained model. No comma should be included in the input. Example input: 0.5 0.5 0.5",
     )
     parser.add_argument(
+        "--n_tiles",
+        nargs="*",
+        type=int,
+        help="When using stardist, n_tile is the number of tiles to use for prediction.Must be an iterable of length 3 (the number of dimensions).\
+                Example input: 20 20 20",
+    )
+    parser.add_argument(
         "--threshold",
         type=int,
         required=True,
@@ -138,7 +145,7 @@ def main():
                 f"preprocessing successful, cost {preprocess_finish_time - read_finish_time}s"
             )
 
-            segmented_image = segment(args.model, preprocessed_image)
+            segmented_image = segment(args.model, preprocessed_image, args.n_tiles)
             segment_finish_time = timer()
             print(
                 f"segmentation successful, cost {segment_finish_time - preprocess_finish_time}s"
