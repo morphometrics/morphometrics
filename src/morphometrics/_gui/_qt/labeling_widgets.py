@@ -7,7 +7,15 @@ from magicgui import magicgui, widgets
 from napari.components.viewer_model import ViewerModel
 from napari.qt.threading import FunctionWorker, thread_worker
 from napari.types import LayerDataTuple
-from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+from napari.utils.notifications import show_info
+from qtpy.QtWidgets import (
+    QGroupBox,
+    QLabel,
+    QPushButton,
+    QRadioButton,
+    QVBoxLayout,
+    QWidget,
+)
 from skimage.exposure import histogram
 from skimage.morphology import flood
 
@@ -251,6 +259,13 @@ class FloodFillWidget(QWidget):
         self.layout().setSpacing(0)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
+    def _on_activate(self):
+        pass
+
+    def _on_deactivate(self):
+        self._enabled_button.setChecked(False)
+        self._on_disable()
+
     def _enable_histogram_plot(self, image: np.ndarray):
         self.histogram.plot_image_histogram(image=image)
         self.histogram.widget.setVisible(True)
@@ -297,9 +312,21 @@ class FloodFillWidget(QWidget):
             return
         else:
             self._labels_layer.mouse_drag_callbacks.append(self.flood_fill)
+            self._ortho_viewers[0].layers[
+                self._labels_layer.name
+            ].mouse_drag_callbacks.append(self.flood_fill)
+            self._ortho_viewers[1].layers[
+                self._labels_layer.name
+            ].mouse_drag_callbacks.append(self.flood_fill)
             self._labels_layer.mode = "pan_zoom"
             self._viewer.layers.selection = [self._labels_layer]
             self._labels_layer.bind_key("Space", self._toggle_pan_zoom)
+            self._ortho_viewers[0].layers[self._labels_layer.name].bind_key(
+                "Space", self._toggle_pan_zoom
+            )
+            self._ortho_viewers[1].layers[self._labels_layer.name].bind_key(
+                "Space", self._toggle_pan_zoom
+            )
             self._enabled_button.setText(self.DISABLE_STRING)
 
             self._enable_histogram_plot(image=self._image_layer.data)
@@ -307,7 +334,15 @@ class FloodFillWidget(QWidget):
     def _on_disable(self):
         if self.flood_fill in self._labels_layer.mouse_drag_callbacks:
             self._labels_layer.mouse_drag_callbacks.remove(self.flood_fill)
+            self._ortho_viewers[0].layers[
+                self._labels_layer.name
+            ].mouse_drag_callbacks.remove(self.flood_fill)
+            self._ortho_viewers[1].layers[
+                self._labels_layer.name
+            ].mouse_drag_callbacks.remove(self.flood_fill)
         self._labels_layer.bind_key("Space", None)
+        self._ortho_viewers[0].layers[self._labels_layer.name].bind_key("Space", None)
+        self._ortho_viewers[1].layers[self._labels_layer.name].bind_key("Space", None)
         self._enabled_button.setText(self.ENABLE_STRING)
         self._disable_histogram_plot()
 
@@ -315,6 +350,11 @@ class FloodFillWidget(QWidget):
         if self._pan_zoom is True:
             # do not flood fill in pan/zooming
             return
+
+        if len(event.dims_displayed) != 2:
+            show_info("flood fill can only be applied to 2D views")
+            return
+
         # get the value (need to nd-ify)
         click_world = event.position
         click_data = np.asarray(layer.world_to_data(click_world), dtype=int)
@@ -403,10 +443,80 @@ class FloodFillWidget(QWidget):
         self._pan_zoom = False
 
 
+class PanZoomWidget(QWidget):
+    def __init__(self, main_viewer: napari.Viewer, ortho_viewers: List[ViewerModel]):
+        super().__init__()
+        self.label = QLabel("pan/zoom")
+
+        self.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.label)
+        self.layout().addStretch(1)
+
+    def _on_activate(self):
+        pass
+
+    def _on_deactivate(self):
+        pass
+
+
+labeling_modes = {"pan/zoom": PanZoomWidget, "flood fill": FloodFillWidget}
+
+
+class LabelingModeWidget(QWidget):
+    def __init__(self, main_viewer: napari.Viewer, ortho_viewers: List[ViewerModel]):
+        super().__init__()
+        mode_box_layout = QVBoxLayout()
+        mode_widget_layout = QVBoxLayout()
+
+        mode_buttons = []
+        self.labeling_widgets = dict()
+        for name, mode_widget in labeling_modes.items():
+            mode_button = QRadioButton(name)
+            mode_button.toggled.connect(self._on_mode_button_clicked)
+            mode_box_layout.addWidget(mode_button)
+            mode_buttons.append(mode_button)
+
+            widget = mode_widget(main_viewer=main_viewer, ortho_viewers=ortho_viewers)
+            mode_widget_layout.addWidget(widget)
+            widget.setVisible(False)
+            self.labeling_widgets[name] = widget
+        self.mode_buttons = mode_buttons
+
+        self.mode_box = QGroupBox("labeling mode")
+        mode_box_layout.addStretch(1)
+        self.mode_box.setLayout(mode_box_layout)
+
+        self.setLayout(QVBoxLayout())
+        self.layout().addWidget(self.mode_box)
+
+        for widget in self.labeling_widgets.values():
+            self.layout().addWidget(widget)
+        self.layout().addStretch(1)
+
+    def _on_mode_button_clicked(self):
+        button = self.sender()
+        button_name = button.text()
+        widget = self.labeling_widgets[button_name]
+        if button.isChecked():
+            widget._on_activate()
+            widget.setVisible(True)
+        else:
+            widget._on_deactivate()
+            widget.setVisible(False)
+
+
 class MultiCanvasLabelerWidget(MultipleViewerWidget):
     def __init__(self, viewer: napari.Viewer):
         super().__init__(viewer)
-        self.flood_fill_widget = FloodFillWidget(
+        # self.flood_fill_widget = FloodFillWidget(
+        #     main_viewer=viewer, ortho_viewers=self.ortho_viewer_models
+        # )
+        # self.addWidget(self.flood_fill_widget)
+        self.labeling_mode_widget = LabelingModeWidget(
             main_viewer=viewer, ortho_viewers=self.ortho_viewer_models
         )
-        self.addWidget(self.flood_fill_widget)
+        self.addWidget(self.labeling_mode_widget)
+
+        self.viewer.axes.visible = True
+        for model in self.ortho_viewer_models:
+            model.axes.visible = True
