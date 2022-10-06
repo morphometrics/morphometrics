@@ -262,6 +262,9 @@ def _lower_triangle_to_full_array(lower_triangle_array: np.ndarray) -> np.ndarra
     full_array : np.ndarray
         The filled in array. Has the same dimensions as input array.
     """
+    # ensure lower triangle
+    lower_triangle_array = np.tril(lower_triangle_array)
+
     # create the array by flipping the lower half
     full_array = lower_triangle_array.T + lower_triangle_array
     idx = np.arange(lower_triangle_array.shape[0])

@@ -3,6 +3,7 @@ import pyclesperanto_prototype as cle
 import pytest
 
 from morphometrics.label.image_utils import (
+    _lower_triangle_to_full_array,
     expand_bounding_box,
     expand_selected_labels,
     expand_selected_labels_using_crop,
@@ -10,6 +11,16 @@ from morphometrics.label.image_utils import (
     touch_matrix_from_label_image,
 )
 from morphometrics.utils.environment_utils import on_ci, on_macos, on_windows
+
+full_array = np.array([[0, 1, 1], [1, 0, 0], [1, 0, 0]])
+lower_triangle_array = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 0]])
+
+
+@pytest.mark.parametrize("array", [lower_triangle_array, full_array])
+def test__lower_triangle_to_full_array(array):
+    result = _lower_triangle_to_full_array(array)
+    expected_full_array = np.array([[0, 1, 1], [1, 0, 0], [1, 0, 0]])
+    np.testing.assert_equal(result, expected_full_array)
 
 
 @pytest.mark.skipif(
