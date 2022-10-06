@@ -403,7 +403,6 @@ class FloodFillWidget(QWidget):
             offset = -click_vector[1]
 
             tolerance = np.clip(initial_tolerance + (offset / 300), 0, 1)
-            print(f"\r{tolerance}")
 
             # update the threshold plot
             min_threshold = np.clip(click_value - tolerance, 0, 1)
