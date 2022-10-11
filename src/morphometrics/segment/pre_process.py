@@ -36,7 +36,7 @@ def pre_process_image(
         raw_image[np.invert(segmentation_mask.astype(bool))] = 0
 
     # calculate the scale factor for the pixel size
-    scale_factor = np.asarray(target_pixel_size) / np.asarray(raw_pixel_size)
+    scale_factor = np.asarray(raw_pixel_size) / np.asarray(target_pixel_size)
 
     # rescale the image pixel size
     rescaled_image = rescale(raw_image, scale_factor)
