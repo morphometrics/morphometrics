@@ -1,15 +1,19 @@
 name: morphometrics
 channels:
-  - pytorch
   - conda-forge
+  - pytorch
   - defaults
 dependencies:
   - python=3.9
   - hdbscan
+  - leidenalg
+  - napari
+  - numba
+  - numpy
   - pyopencl
+  - pyqt>=5.12.3,!=5.15.0
   - python-igraph
   - pytables
-  - leidenalg
   - pip>=22.0
   - pip:
     - morphometrics
