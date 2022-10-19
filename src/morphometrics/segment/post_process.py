@@ -38,7 +38,7 @@ def post_process_image(
         resized_image = resize(segmented_image, segmentation_mask.shape, order=0)
         # mask the background
         resized_image[np.invert(segmentation_mask.astype(bool))] = 0
-    else:
+    elif shape is not None:
         resized_image = resize(segmented_image, shape, order=0)
 
     # filter out the segmented objects blow the threshold size
