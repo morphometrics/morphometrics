@@ -9,7 +9,7 @@ def post_process_image(
     segmented_image: np.ndarray,
     threshold: int,
     segmentation_mask: Optional[np.ndarray] = None,
-    shape: Optional[List] = None,
+    shape: Optional[List] = None
 ):
     """
     Post-processing the segmented image.
