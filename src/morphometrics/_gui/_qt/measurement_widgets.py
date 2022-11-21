@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Union
 
 import napari
 import numpy as np
-from magicgui import magicgui
+from magicgui.widgets import create_widget
 from napari_skimage_regionprops._table import add_table
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -100,14 +100,13 @@ class QtMeasurementWidget(QWidget):
         self._viewer = viewer
 
         # create the layer selection widgets
-        self._layer_selection_widget = magicgui(
-            self._select_layers,
-            intensity_image={"choices": self._get_image_layers},
-            label_image={"choices": self._get_labels_layers},
-            auto_call=True,
-            call_button=False,
-        )
-        self._layer_selection_widget()
+        self._image_selection_widget_container, self._image_selection_widget = \
+            _create_widget_with_label(annotation=napari.layers.Image, label="intensity_image")
+        self._label_selection_widget_container, self._label_selection_widget = \
+            _create_widget_with_label(annotation=napari.layers.Labels, label="label_image")
+
+        self._image_selection_widget.changed.connect(self._select_layers)
+        self._label_selection_widget.changed.connect(self._select_layers)
 
         # create the measurement widgets
         self.measurement_widgets = create_measurement_widgets(_measurements)
@@ -117,10 +116,19 @@ class QtMeasurementWidget(QWidget):
 
         # add widgets to the layout
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(self._layer_selection_widget.native)
+        self.layout().addWidget(self._image_selection_widget_container)
+        self.layout().addWidget(self._label_selection_widget_container)
         for widget in self.measurement_widgets:
             self.layout().addWidget(widget)
         self.layout().addWidget(self._run_button)
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self.reset_choices()
+
+    def reset_choices(self, event=None):
+        self._image_selection_widget.reset_choices(event)
+        self._label_selection_widget.reset_choices(event)
 
     @property
     def measurement_selection(self) -> List[Union[str, Dict[str, Any]]]:
@@ -144,25 +152,9 @@ class QtMeasurementWidget(QWidget):
 
         return measurement_selection
 
-    def _select_layers(
-        self, intensity_image: napari.layers.Image, label_image: napari.layers.Labels
-    ):
-        self._intensity_image_layer = intensity_image
-        self._label_image_layer = label_image
-
-    def _get_image_layers(self, combo_widget):
-        return [
-            layer
-            for layer in self._viewer.layers
-            if isinstance(layer, napari.layers.Image)
-        ]
-
-    def _get_labels_layers(self, combo_widget):
-        return [
-            layer
-            for layer in self._viewer.layers
-            if isinstance(layer, napari.layers.Labels)
-        ]
+    def _select_layers(self):
+        self._intensity_image_layer = self._image_selection_widget.value
+        self._label_image_layer = self._label_selection_widget.value
 
     def _run(self):
         for widget in self.measurement_widgets:
@@ -197,3 +189,12 @@ class QtMeasurementWidget(QWidget):
 
         self._label_image_layer.properties = measurement_table.reset_index()
         add_table(self._label_image_layer, self._viewer)
+
+def _create_widget_with_label(annotation, label):
+    qt_widget = QWidget()
+    qt_widget.setLayout(QHBoxLayout())
+    qt_widget.layout().addWidget(QLabel(label.replace("_", " ")))
+    magicgui_widget = create_widget(annotation=annotation, label=label)
+    qt_widget.layout().addWidget(magicgui_widget.native)
+
+    return qt_widget, magicgui_widget
