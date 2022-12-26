@@ -161,6 +161,12 @@ class LabelingModel:
             dims_displayed=event.dims_displayed,
             world=True,
         )
+        if (label_index is None) or (label_index == layer._background_label):
+            # the background or outside the layer was clicked, clear the selection
+            if "shift" not in event.modifiers:
+                # don't clear the selection if the shift key was held
+                self._selected_labels.clear()
+            return
         if "shift" in event.modifiers:
             self._selected_labels.symmetric_difference_update([label_index])
         else:
