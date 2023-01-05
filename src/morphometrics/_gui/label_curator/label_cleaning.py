@@ -1,6 +1,7 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 import napari
+import numpy as np
 from napari.utils.events import EmitterGroup, Event, EventedSet
 
 if TYPE_CHECKING:
@@ -82,3 +83,57 @@ class LabelCleaningModel:
                 list(self._selected_labels)
             )
         )
+
+    def merge_selected_labels(self):
+        """Merge the selected label values.
+
+        The merged segments will be given the maximum value of the
+        selected labels.
+        """
+        if len(self._selected_labels) < 2:
+            # need at least two labels to merge
+            return
+        max_selected_label = np.max(list(self._selected_labels))
+        non_max_labels = list(self._selected_labels.difference([max_selected_label]))
+
+        self._update_labels(
+            labels_to_update=non_max_labels, new_value=max_selected_label
+        )
+
+        # update the selection
+        self._selected_labels._set.clear()
+        self._selected_labels.update([max_selected_label])
+
+    def delete_selected_labels(self):
+        """Delete the selected labels.
+
+        The deleted segments will be given the layer's background label value.
+        """
+        if len(self._selected_labels) == 0:
+            # nothing to delete
+            return
+        self._update_labels(
+            labels_to_update=list(self._selected_labels),
+            new_value=self._curator_model.labels_layer._background_label,
+        )
+
+        # clear the selection
+        self._selected_labels.clear()
+
+    def _update_labels(self, labels_to_update: List[int], new_value: int):
+        labels_layer = self._curator_model.labels_layer
+        update_mask = np.zeros_like(labels_layer.data, dtype=bool)
+        for label in list(self._selected_labels):
+            update_mask = np.logical_or(update_mask, labels_layer.data == label)
+
+        # record the data to be changed for the undo
+        coordinates = np.argwhere(update_mask)
+        previous_index = tuple(zip(coordinates.T))
+        previous_values = labels_layer.data[update_mask]
+
+        # set the new data
+        labels_layer.data[update_mask] = new_value
+        labels_layer.refresh()
+
+        # record the changes to the undo
+        labels_layer._save_history((previous_index, previous_values, new_value))

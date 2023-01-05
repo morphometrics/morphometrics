@@ -36,6 +36,7 @@ class LabelPaintingModel:
     def _on_enable(self):
         # add the events
         self._curator_model.labels_layer.mode = "paint"
+        self._curator_model.labels_layer.color_mode = "auto"
 
     def _on_disable(self):
         self._curator_model.labels_layer.mode = "pan_zoom"

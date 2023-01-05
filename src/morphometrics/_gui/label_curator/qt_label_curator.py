@@ -3,9 +3,17 @@ from typing import List, Optional
 import napari
 from magicgui import magicgui
 from napari.utils.events import Event
-from qtpy.QtWidgets import QGroupBox, QLabel, QRadioButton, QVBoxLayout, QWidget
+from qtpy.QtWidgets import (
+    QGroupBox,
+    QLabel,
+    QPushButton,
+    QRadioButton,
+    QVBoxLayout,
+    QWidget,
+)
 
-from morphometrics._gui.label_curator import CurationMode, LabelCurator
+from morphometrics._gui.label_curator.label_cleaning import LabelCleaningModel
+from morphometrics._gui.label_curator.label_curator import CurationMode, LabelCurator
 
 
 class QtPaintWidget(QWidget):
@@ -34,19 +42,26 @@ class QtPaintWidget(QWidget):
 
 
 class QtCleanWidget(QWidget):
-    def __init__(self, curator_model: LabelCurator, parent=None):
+    def __init__(self, model: LabelCleaningModel, parent=None):
         super().__init__(parent=parent)
-        self._curator_model = curator_model
+        self._model = model
         self.label = QLabel("clean")
 
+        # button for merging labels
+        self._merge_button = QPushButton("merge selected labels")
+        self._merge_button.clicked.connect(self._model.merge_selected_labels)
+
+        # button for deleting labels
+        self._delete_button = QPushButton("delete selected labels")
+        self._delete_button.clicked.connect(self._model.delete_selected_labels)
+
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(self.label)
+        self.layout().addWidget(self._merge_button)
+        self.layout().addWidget(self._delete_button)
         self.layout().addStretch(1)
 
-        self.setVisible(self._curator_model._cleaning_model.enabled)
-        self._curator_model._cleaning_model.events.enabled.connect(
-            self._on_enabled_changed
-        )
+        self.setVisible(self._model.enabled)
+        self._model.events.enabled.connect(self._on_enabled_changed)
 
     def _on_activate(self):
         pass
@@ -55,7 +70,7 @@ class QtCleanWidget(QWidget):
         pass
 
     def _on_enabled_changed(self, event: Event) -> None:
-        self.setVisible(self._curator_model._cleaning_model.enabled)
+        self.setVisible(self._model.enabled)
 
 
 class QtExploreWidget(QWidget):
@@ -81,7 +96,9 @@ class QtLabelingModeWidget(QWidget):
         self._curator_model = curator_model
         self.mode_widgets = {
             CurationMode.PAINT: QtPaintWidget(curator_model=curator_model, parent=self),
-            CurationMode.CLEAN: QtCleanWidget(curator_model=curator_model, parent=self),
+            CurationMode.CLEAN: QtCleanWidget(
+                model=curator_model._cleaning_model, parent=self
+            ),
             CurationMode.EXPLORE: QtExploreWidget(
                 curator_model=curator_model, parent=self
             ),
