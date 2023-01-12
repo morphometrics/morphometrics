@@ -8,9 +8,25 @@ from morphometrics.types import LabelImage
 
 
 def find_segment_centroid(
-    label_image: LabelImage, label_value: int, z_index: Optional[int] = None
+    label_image: LabelImage, label_value: int, z_index: int = None
 ) -> np.ndarray:
+    """Find the centroid of a segment at a given 0th axis coordinate.
 
+    Parameters
+    ----------
+    label_image : LabelImage
+        The labels to compute the centroid position on.
+    label_value : int
+        The value of the segment from which to calculate the centroid.
+    z_index : int
+        The coordinate along the 0th axes to measure the centroid in.
+
+    Returns
+    -------
+    centroid : np.ndarray
+        The 2D centroid of the selected in the segment.
+        THe provided coordinates correspond to the 1st and 2nd axes.
+    """
     ndim = label_image.ndim
     if ndim == 2:
         indices = np.argwhere(label_image == label_value)
@@ -33,7 +49,24 @@ def _measure_segment_properties(
         The labels to compute the thickness on.
     axis : int
         The axis along which to compute thickness
+    background_label : int
+        The label value that is considered background. The background label
+        won't be measured. if set to None, all label values will be measured.
+        Default value is 0.
 
+    Returns
+    -------
+    segment_thicknesses : Dict[int, int]
+        The thickness of each segment along the 0th axis stored as a dictionary where
+        the key is the label value and the value is the thickness.
+    top_coordinates :  Dict[int, int]
+        The top coordinate along the 0th axis of the bounding box of each segment stored
+        as a dictionary where the key is the label value and the value
+        is the coordinate.
+    bottom_coordinates :  Dict[int, int]
+        The bottom coordinate along the 0th axis of the bounding box of each segment stored
+        as a dictionary where the key is the label value and the value
+        is the coordinate.
     """
     region_props = regionprops_table(
         label_image=label_image, properties=("label", "bbox")
@@ -82,6 +115,47 @@ def _find_labels_to_stitch(
     center_distance_threshold: float = 50,
     background_label: Optional[int] = 0,
 ) -> List[int]:
+    """Find label values to stitch to a given segment.
+
+    This function starts from the selected labels as seeds and iterates
+    along the 0th axis in the specified direction, selecting small segments that have
+    a thickness below the thickness threshold and have a smaller interfacial
+    surface area than the previous segment.
+
+    This is different from find_labels_to_stitch() in that it iterates only in one direction.
+
+    Parameters
+    ----------
+    label_image : LabelImage
+        The label image to stitch.
+    starting_label : int
+        The label value to use as the seed for stitching.
+    coordinate_increment : int
+        The value to add to the increment each iteration. Can be a positive or negative
+        integer.
+    segment_thicknesses : Dict[int, int]
+        The thickness of each segment along the 0th axis stored as a dictionary where
+        the key is the label value and the value is the thickness.
+    labels_to_stitch : Optional[List[int]]
+        Any labels found by this function will be appended to this list. If None
+        is passed, this function will initialize with an empty list.
+        Default value is None.
+    thickness_threshold : int
+        The maximum thickness along the 0th axis a segment can have to be
+        considered for stitching.
+    center_distance_threshold : float
+        The maximum distances in the 1-2 plane the centroids of two adjacent
+        segments can have for stitching.
+    background_label : int
+        The label value that is considered background. The background label
+        cannot be stitched. if set to None, all label values can be stitched.
+        Default value is 0.
+
+    Returns
+    -------
+    labels_to_stitch : List[int]
+        The values of the labels to be stitched to the lable_value segment.
+    """
 
     if labels_to_stitch is None:
         # default to empty list if no indices are provided
@@ -171,21 +245,46 @@ def find_labels_to_stitch(
     center_distance_threshold: float = 50,
     background_label: Optional[int] = 0,
 ) -> List[int]:
+    """Find label values to stitch to a given segment.
+
+     This function starts from the selected labels as seeds and
+    iterates along the 0th axis, selecting small segments that have
+    a thickness below the thickness threshold and have a smaller interfacial
+    surface area than the previous segment.
+
+    Parameters
+    ----------
+    label_image : LabelImage
+        The label image to stitch.
+    starting_label : int
+        The label value to use as the seed for stitching.
+    top_coordinates :  Dict[int, int]
+        The top coordinate along the 0th axis of the bounding box of each segment stored
+        as a dictionary where the key is the label value and the value
+        is the coordinate.
+    bottom_coordinates :  Dict[int, int]
+        The bottom coordinate along the 0th axis of the bounding box of each segment stored
+        as a dictionary where the key is the label value and the value
+        is the coordinate.
+    segment_thicknesses : Dict[int, int]
+        The thickness of each segment along the 0th axis stored as a dictionary where
+        the key is the label value and the value is the thickness.
+    thickness_threshold : int
+        The maximum thickness along the 0th axis a segment can have to be
+        considered for stitching.
+    center_distance_threshold : float
+        The maximum distances in the 1-2 plane the centroids of two adjacent
+        segments can have for stitching.
+    background_label : int
+        The label value that is considered background. The background label
+        cannot be stitched. if set to None, all label values can be stitched.
+        Default value is 0.
+
+    Returns
+    -------
+    labels_to_stitch : List[int]
+        The values of the labels to be stitched to the lable_value segment.
     """
-    Finds the bad labels that need to be fused with good_label as well as the durations
-    taken to find them
-
-    Lines 161-177 :
-    Lines 186-214 : finds the centroid and area for the new label's slice and then finds
-                    booleans for the validity criteria for the bad labels
-
-    The while loop stops executing when all the bad labels have been found on
-    both sides of the good segment
-
-    """
-
-    """ Initialise everything. Selects the 2d slice to begin with and the direction """
-
     # find the labels to stitch in the positive direction
     labels_to_stitch = _find_labels_to_stitch(
         label_image=label_image,
@@ -221,7 +320,43 @@ def stitch_from_selected_labels(
     background_label: Optional[int] = 0,
     in_place: bool = False,
     verbose: bool = False,
-) -> np.ndarray:
+) -> LabelImage:
+    """Stitch small labels to selected labels.
+
+    This function starts from the selected labels as seeds and
+    iterates along the 0th axis, connecting small segments that have
+    a thickness below the thickness threshold and have a smaller interfacial
+    surface area than the previous segment. This function is meant to correct
+    oversegmentation in the tips of cells.
+
+    Parameters
+    ----------
+    label_image : LabelImage
+        The label image to stitch.
+    starting_labels : List[int]
+        The labels to use as seeds for stitching. These are the segments that
+        the smaller segments will be stitched to.
+    thickness_threshold : int
+        The maximum thickness along the 0th axis a segment can have to be
+        considered for stitching.
+    center_distance_threshold : float
+        The maximum distances in the 1-2 plane the centroids of two adjacent
+        segments can have for stitching.
+    background_label : int
+        The label value that is considered background. The background label
+        cannot be stitched. if set to None, all label values can be stitched.
+        Default value is 0.
+    in_place : bool
+        Modifications are performed in place if set to True. Default value is False.
+    verbose : bool
+        A progress bar will be displayed if set to True. Default value is False.
+
+    Returns
+    -------
+    stitched_labels : LabelImage
+        The label image that has been stitched. If in_place is True, this is the
+        same array that was passed in.
+    """
 
     if not in_place:
         label_image = label_image.copy()
