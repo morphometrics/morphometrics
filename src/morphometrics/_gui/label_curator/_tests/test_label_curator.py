@@ -4,9 +4,9 @@ import numpy as np
 from morphometrics._gui.label_curator.label_curator import CurationMode, LabelCurator
 
 
-def test_empty_label_curator():
+def test_empty_label_curator(make_napari_viewer):
     """Test initializing the label curator model without a labels layer."""
-    viewer = napari.Viewer
+    viewer = napari.make_napari_viewer()
     label_curator = LabelCurator(viewer=viewer)
     assert label_curator.initialized is False
     assert label_curator.labels_layer is None
@@ -25,9 +25,9 @@ def test_empty_label_curator():
     assert label_curator._cleaning_model.enabled
 
 
-def test_label_curator():
+def test_label_curator(make_napari_viewer):
     """Test initializing the curator with a labels layer"""
-    viewer = napari.Viewer
+    viewer = make_napari_viewer()
     labels_layer = napari.layers.Labels(np.zeros((10, 10), dtype=int))
     label_curator = LabelCurator(viewer=viewer, labels_layer=labels_layer)
     assert label_curator.initialized is True

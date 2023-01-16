@@ -15,9 +15,9 @@ class MockMouseEvent:
     modifiers: List[str]
 
 
-def test_labeling_model_mouse_selection():
+def test_labeling_model_mouse_selection(make_napari_viewer):
     # make the viewer
-    viewer = napari.Viewer()
+    viewer = make_napari_viewer()
 
     # make the labels_layer
     label_image = np.zeros((10, 10), dtype=int)

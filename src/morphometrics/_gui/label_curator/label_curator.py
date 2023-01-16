@@ -76,7 +76,7 @@ class LabelCurator:
     ):
         self._viewer = viewer
         self._mode = CurationMode(mode)
-        self._labels_layer = labels_layer
+        self._labels_layer = None
         self._initialized = False
 
         self.events = EmitterGroup(source=self, labels_layer=Event, mode=Event)
@@ -89,6 +89,7 @@ class LabelCurator:
         self._painting_model = LabelPaintingModel(curator_model=self)
 
         # set everything up.
+        self.labels_layer = labels_layer
         self._enable_current_mode()
 
     @property
