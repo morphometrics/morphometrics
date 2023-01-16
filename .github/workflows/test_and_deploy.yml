@@ -62,17 +62,17 @@ jobs:
       - name: Conda info
         shell: bash -l {0}
         run: conda info
-      - name: Install pocl
-        if: runner.os == 'Linux'
+      - name: Install pocl (linux)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         shell: bash -l {0}
         run: conda install -y pocl
       - name: Install dependencies
         shell: bash -l {0}
         run: |
           python --version
-          #conda install -y -c conda-forge -y 
-          conda install -y -c conda-forge pyopencl pip setuptools wheel pytest pytest-cov pytest-benchmark pytest-xvfb pandas pytest-qt "pyqt >=5.12.3,!=5.15.0" python-igraph pytables leidenalg pymeshfix numpy 
-          
+          #conda install -y -c conda-forge -y
+          conda install -y -c conda-forge pyopencl pip setuptools wheel pytest pytest-cov pytest-benchmark pytest-xvfb pandas pytest-qt "pyqt >=5.12.3,!=5.15.0" python-igraph pytables leidenalg pymeshfix numpy
+
 
           pip install -e .
       # this runs the platform-specific tests declared in tox.ini

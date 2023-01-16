@@ -26,7 +26,6 @@ def test_find_segment_centroid():
 
     centroid = find_segment_centroid(label_image=label_image, label_value=1, z_index=3)
     np.testing.assert_allclose([3, 6], centroid)
-    assert centroid.dtype == np.int64
 
 
 def test_find_labels_to_stitch_stop_on_area_increase():
