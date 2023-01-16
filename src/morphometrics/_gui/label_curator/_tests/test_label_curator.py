@@ -6,7 +6,7 @@ from morphometrics._gui.label_curator.label_curator import CurationMode, LabelCu
 
 def test_empty_label_curator(make_napari_viewer):
     """Test initializing the label curator model without a labels layer."""
-    viewer = napari.make_napari_viewer()
+    viewer = make_napari_viewer()
     label_curator = LabelCurator(viewer=viewer)
     assert label_curator.initialized is False
     assert label_curator.labels_layer is None
