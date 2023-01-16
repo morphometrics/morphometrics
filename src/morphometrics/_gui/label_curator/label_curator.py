@@ -45,7 +45,7 @@ class ColormapManager:
 
         colors_default = colors_highlight.copy()
         colors_default[:, 3] = 0.5
-        colors_default[:, 0:3] = colors_default[:, 0:3] * 0.5
+        colors_default[:, 0:3] = colors_default[:, 0:3] * 0.7
 
         colors_default_cylcer = cycle(colors_default)
         colormap_default = {i: next(colors_default_cylcer) for i in range(1000)}
@@ -55,12 +55,15 @@ class ColormapManager:
         return colormap_default, colormap_highlight
 
     def create_highlighted_colormap(
-        self, label_indices: np.ndarray
+        self, highlighted_indices: np.ndarray, hide_indices: Optional[np.array] = None
     ) -> Dict[Optional[int], np.ndarray]:
-        label_indices = np.asarray(label_indices)
+        highlighted_indices = np.asarray(highlighted_indices)
         new_colormap = self._default_colormap.copy()
-        for index in label_indices:
+        for index in highlighted_indices:
             new_colormap[index] = self._highlight_colormap[index]
+        if hide_indices is not None:
+            for index in hide_indices:
+                new_colormap[index] = 0.4 * new_colormap[index]
         return new_colormap
 
 
@@ -122,10 +125,43 @@ class LabelCurator:
         if layer is self._labels_layer:
             # if the layer hasn't changed, don't perform the update
             return None
+
+        # deactivate the current layer
         self._disable_current_mode()
+        self._disconnect_labels_layer_events()
+
+        # set the new layer
         self._labels_layer = layer
+        self._initialize_layer_features_table()
+        self._connect_labels_layer_events()
         self._enable_current_mode()
+
         self.events.labels_layer()
+
+    def _connect_labels_layer_events(self) -> None:
+        """Add callbacks to the labels layer events"""
+        if self.labels_layer is None:
+            return
+        self.labels_layer.events.paint.connect(self._on_paint)
+
+    def _disconnect_labels_layer_events(self) -> None:
+        """Remove callbacks to the labels layer events"""
+        if self.labels_layer is None:
+            return
+        self.labels_layer.events.paint.disconnect(self._on_paint)
+
+    def _initialize_layer_features_table(self) -> None:
+        if "index" not in self.labels_layer.features:
+            label_values = np.unique(self.labels_layer.data)
+            self.labels_layer.features["index"] = label_values
+
+        if "mm_curated" not in self.labels_layer.features:
+            self.labels_layer.features["mm_validated"] = False
+
+        self.labels_layer._feature_table._defaults = (
+            self.labels_layer._feature_table._make_defaults()
+        )
+        self.labels_layer._label_index = self.labels_layer._make_label_index()
 
     @property
     def mode(self) -> CurationMode:
@@ -185,3 +221,15 @@ class LabelCurator:
         else:
             raise ValueError("Unknown mode")
         self._initialized = False
+
+    def _on_paint(self, event: Event) -> None:
+        """This callback is applied when painting is performed to ensure
+        the pained labels are in the features table.
+        """
+        # get the labels that were added
+        label_values = np.unique([item[2] for item in event.value])
+        for label in label_values:
+            default_table = self.labels_layer._feature_table.defaults
+            default_table["index"] = label
+            default_table["mm_validated"] = False
+            self.labels_layer._feature_table.append(default_table)

@@ -1,7 +1,9 @@
 from typing import List, Optional
 
 import napari
-from magicgui import magicgui
+from magicgui import magicgui, widgets
+from napari.qt.threading import FunctionWorker, thread_worker
+from napari.types import LayerDataTuple
 from napari.utils.events import Event
 from qtpy.QtWidgets import (
     QGroupBox,
@@ -14,6 +16,7 @@ from qtpy.QtWidgets import (
 
 from morphometrics._gui.label_curator.label_cleaning import LabelCleaningModel
 from morphometrics._gui.label_curator.label_curator import CurationMode, LabelCurator
+from morphometrics.label.image_utils import expand_selected_labels_using_crop
 
 
 class QtPaintWidget(QWidget):
@@ -55,9 +58,30 @@ class QtCleanWidget(QWidget):
         self._delete_button = QPushButton("delete selected labels")
         self._delete_button.clicked.connect(self._model.delete_selected_labels)
 
+        # button for toggling validated
+        self._validate_button = QPushButton("toggle validation of selected labels")
+        self._validate_button.clicked.connect(
+            self._model.toggle_selected_label_validated
+        )
+
+        # widget for expanding labels
+
+        self._label_expansion_widget = magicgui(
+            self._expand_selected_labels_widget_function,
+            pbar={"visible": False, "max": 0, "label": "working..."},
+            call_button="expand labels",
+        )
+        expand_group_layout = QVBoxLayout()
+        expand_group_layout.addStretch(1)
+        expand_group_layout.addWidget(self._label_expansion_widget.native)
+        self.expand_labels_box = QGroupBox("expand labels")
+        self.expand_labels_box.setLayout(expand_group_layout)
+
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self._merge_button)
         self.layout().addWidget(self._delete_button)
+        self.layout().addWidget(self._validate_button)
+        self.layout().addWidget(self.expand_labels_box)
         self.layout().addStretch(1)
 
         self.setVisible(self._model.enabled)
@@ -71,6 +95,54 @@ class QtCleanWidget(QWidget):
 
     def _on_enabled_changed(self, event: Event) -> None:
         self.setVisible(self._model.enabled)
+
+    def _expand_selected_labels_widget_function(
+        self,
+        pbar: widgets.ProgressBar,
+        expansion_amount: int = 3,
+    ) -> FunctionWorker[LayerDataTuple]:
+        """
+
+        Parameters
+        ----------
+        pbar : widgets.ProgressBar
+            The progress bar to be displayed while the computation is running.
+            This is supplied by magicgui.
+        labels_to_expand : str
+            The label values to expand as a comma separated string.
+        expansion_amount : int
+            The radius of the expansion in pixels.
+
+        Returns
+        -------
+        function_worker : FunctionWorker[LayerDataTuple]
+            The FunctionWorker that will return the new labels layer data when the computation has completed.
+        """
+        label_values_to_expand = list(self._model._selected_labels)
+
+        # get the values from the selected labels layer
+        label_image = self._model._curator_model.labels_layer.data
+        label_layer_name = self._model._curator_model.labels_layer.name
+        # if self._model.background_mask_layer is not None:
+        #     background_mask = self._curator_model.background_mask_layer.data
+        # else:
+        background_mask = None
+
+        @thread_worker(connect={"returned": pbar.hide})
+        def _expand_selected_labels() -> LayerDataTuple:
+            new_labels = expand_selected_labels_using_crop(
+                label_image=label_image,
+                label_values_to_expand=label_values_to_expand,
+                expansion_amount=expansion_amount,
+                background_mask=background_mask,
+            )
+            layer_kwargs = {"name": label_layer_name}
+            return (new_labels, layer_kwargs, "labels")
+
+        # show progress bar and return worker
+        pbar.show()
+
+        return _expand_selected_labels()
 
 
 class QtExploreWidget(QWidget):

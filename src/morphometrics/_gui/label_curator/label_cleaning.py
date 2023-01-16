@@ -78,9 +78,12 @@ class LabelCleaningModel:
         if not self.enabled:
             # don't do anything if not curating
             return
+        # get the indices of the validated labels
+        features = self._curator_model.labels_layer.features
+        hide_indices = features.loc[features["mm_validated"]]["index"].values
         self._curator_model.labels_layer.color = (
             self._curator_model._colormap_manager.create_highlighted_colormap(
-                list(self._selected_labels)
+                list(self._selected_labels), hide_indices=hide_indices
             )
         )
 
@@ -119,6 +122,26 @@ class LabelCleaningModel:
 
         # clear the selection
         self._selected_labels.clear()
+
+    def toggle_selected_label_validated(self):
+        """Toggle the validated value in the layer features table."""
+        labels_layer = self._curator_model.labels_layer
+        for label_value in list(self._selected_labels):
+            features_index = labels_layer._label_index[label_value]
+            labels_layer.features.at[features_index, "mm_validated"] = np.logical_not(
+                labels_layer.features.at[features_index, "mm_validated"]
+            )
+
+        # get the indices of the validated labels
+        features = labels_layer.features
+        hide_indices = features.loc[features["mm_validated"]]["index"].values
+
+        # set the colors
+        self._curator_model.labels_layer.color = (
+            self._curator_model._colormap_manager.create_highlighted_colormap(
+                list(self._selected_labels), hide_indices=hide_indices
+            )
+        )
 
     def _update_labels(self, labels_to_update: List[int], new_value: int):
         labels_layer = self._curator_model.labels_layer
