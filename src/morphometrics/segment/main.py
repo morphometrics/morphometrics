@@ -49,10 +49,9 @@ def segmentation_parser():
     )
     parser.add_argument(
         "--channel",
-        nargs="?",
-        help='Specify which staining channel to segment upon, availabel options: DAPI, Alexa488, Alexa568, Alexa647.\
-              DAPI stains the cell nuclei, for more information regarding the target protein of other 3 stains, \
-              please refer to the metadata in "GeneralDescription.txt".',
+        nargs="*",
+        type=int,
+        help='Specify which channel (int) to segment upon.',
     )
     parser.add_argument(
         "--target_pixel_size",

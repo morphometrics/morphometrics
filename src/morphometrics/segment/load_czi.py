@@ -7,10 +7,8 @@ def load_czi(image_file, channel):
     --------
     image_file: path
         path to the image to prepare.
-    channel: string
-        the channel to load and analyze. There are 4 channels of staining: 0: DAPI, 1: Alexa488, 2: Alexa568, 3: Alexa647.
-        DAPI stains the cell nuclei, for more information regarding the target protein of other 3 stains, please refer to
-        the metadata in "GeneralDescription.txt".
+    channel: int
+        the channel to load and analyze.
 
     Returns
     -------
@@ -19,13 +17,13 @@ def load_czi(image_file, channel):
     """
     from aicsimageio import AICSImage
 
-    available_channels = ["DAPI", "Alexa488", "Alexa568", "Alexa647"]
-    if channel not in available_channels:
-        raise ValueError(
-            f"Not an available channel, must be one of {available_channels}."
-        )
+    # available_channels = ["DAPI", "Alexa488", "Alexa568", "Alexa647"]
+    # if channel not in available_channels:
+    #     raise ValueError(
+    #         f"Not an available channel, must be one of {available_channels}."
+    #     )
 
     image = AICSImage(image_file)
-    raw_image = image.data[0, available_channels.index(channel), :, :, :]
+    raw_image = image.data[0, channel, :, :, :]
 
     return raw_image
