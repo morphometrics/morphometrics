@@ -40,6 +40,8 @@ def post_process_image(
         resized_image[np.invert(segmentation_mask.astype(bool))] = 0
     elif shape is not None:
         resized_image = resize(segmented_image, shape, order=0)
+    else:
+        resized_image = segmented_image.copy()
 
     # filter out the segmented objects blow the threshold size
     labeled = measure.label(resized_image)
