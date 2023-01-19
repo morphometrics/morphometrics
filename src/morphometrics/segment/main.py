@@ -29,6 +29,11 @@ def segmentation_parser():
         help="Path to input directory containing images to process.",
     )
     parser.add_argument(
+        "--output",
+        required=True,
+        help='Path to the output directory.',
+    )
+    parser.add_argument(
         "--maskdir",
         nargs="?",
         help="Path to input directory containing image masks correspondingly, \
@@ -125,7 +130,7 @@ def main():
 
             # save
             tifffile.imwrite(
-                f"./postprocessed/postprocessed_{image.strip('')}", postprocessed_image
+                os.path.join(args.output, f"postprocessed_{image.strip('')}"), postprocessed_image
             )
             print("pipeline finished!")
 
@@ -161,7 +166,7 @@ def main():
             # save
             name = image.strip("").replace("czi", "tif")
             tifffile.imwrite(
-                f"./postprocessed/postprocessed_{name}", postprocessed_image
+                os.path.join(args.output, f"postprocessed_{image.strip('')}"), postprocessed_image
             )
             print("pipeline finished!")
 
