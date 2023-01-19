@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest, windows-latest] # windows-latest and  disabled because pocl installation doesnt work
-        python-version: [3.8, 3.9]
+        python-version: [3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -62,17 +62,17 @@ jobs:
       - name: Conda info
         shell: bash -l {0}
         run: conda info
-      - name: Install pocl
-        if: runner.os == 'Linux'
+      - name: Install pocl (linux)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         shell: bash -l {0}
         run: conda install -y pocl
       - name: Install dependencies
         shell: bash -l {0}
         run: |
           python --version
-          conda install -y pyopencl pip setuptools wheel pytest pytest-cov pytest-benchmark pytest-qt pyqt pytest-xvfb pandas
-          conda install -c conda-forge -y python-igraph pytables leidenalg pymeshfix numpy
-          # pip install setuptools tox tox-gh-actions
+          #conda install -y -c conda-forge -y
+          conda install -y -c conda-forge pyopencl pip setuptools wheel pytest pytest-cov pytest-benchmark pytest-xvfb pandas pytest-qt "pyqt >=5.12.3,!=5.15.0" python-igraph pytables leidenalg pymeshfix numpy
+
 
           pip install -e .
       # this runs the platform-specific tests declared in tox.ini

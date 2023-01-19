@@ -126,20 +126,36 @@ def expand_selected_labels_using_crop(
     if isinstance(label_values_to_expand, int):
         # coerce int to list
         label_values_to_expand = [label_values_to_expand]
+    if label_image.ndim == 2:
+        label_image_is_2d = True
+        label_image = np.expand_dims(label_image, axis=0)
+    elif label_image.ndim == 3:
+        label_image_is_2d = False
+    else:
+        raise ValueError("label_image must be 2D or 3D")
+
     label_mask = np.zeros_like(label_image, dtype=bool)
     for label_value in label_values_to_expand:
-        label_mask = np.logical_or(label_mask, label_image == label_value)
+        label_mask = np.logical_or(label_mask, np.asarray(label_image == label_value))
 
     if expansion_amount > 1:
         bounding_box_expansion = 2 * expansion_amount
     else:
         # when expansion is 1, actual radius ends up being 3
         bounding_box_expansion = 4
-    bounding_box = get_mask_bounding_box_3d(label_mask)
+    bounding_box = get_mask_bounding_box(label_mask)
     expanded_bounding_box = expand_bounding_box(
         bounding_box=bounding_box,
         expansion_amount=bounding_box_expansion,
         image_shape=label_image.shape,
+    )
+
+    # ensure all dimensions in the bounding box have at least size 1
+    singleton_dimensions = (
+        expanded_bounding_box[:, 1] - expanded_bounding_box[:, 0]
+    ) == 0
+    expanded_bounding_box[singleton_dimensions, 1] = (
+        expanded_bounding_box[singleton_dimensions, 1] + 1
     )
 
     # extract a crop around the bounding box of the labels
@@ -174,7 +190,67 @@ def expand_selected_labels_using_crop(
         expanded_bounding_box[2, 0] : expanded_bounding_box[2, 1],
     ] = expanded_crop
 
+    if label_image_is_2d:
+        expanded_labels = np.squeeze(expanded_labels)
+
     return expanded_labels
+
+
+def get_mask_bounding_box(mask_image: BinaryImage) -> np.ndarray:
+    """Get the axis-aligned bounding box around the True values in a 2D
+     or 3D mask.
+
+    Parameters
+    ----------
+    mask_image : BinaryImage
+        The binary image from which to calculate the bounding box.
+
+    Returns
+    -------
+    bounding_box : np.ndarray
+        The bounding box as an array where arranged:
+            [
+                [0_min, _max],
+                [1_min, 1_max],
+                [2_min, 2_max]
+            ]
+        where 0, 1, and 2 are the 0th, 1st, and 2nd dimensions,
+        respectively.
+    """
+    if mask_image.ndim == 2:
+        return get_mask_bounding_box_2d(mask_image)
+    elif mask_image.ndim == 3:
+        return get_mask_bounding_box_3d(mask_image)
+    else:
+        raise ValueError("mask must be 2d or 3d")
+
+
+def get_mask_bounding_box_2d(mask_image: BinaryImage) -> np.ndarray:
+    """Get the axis-aligned bounding box around the True values in a 2D mask.
+
+    Parameters
+    ----------
+    mask_image : BinaryImage
+        The binary image from which to calculate the bounding box.
+
+    Returns
+    -------
+    bounding_box : np.ndarray
+        The bounding box as an array where arranged:
+            [
+                [0_min, _max],
+                [1_min, 1_max],
+            ]
+        where 0, 1 are the 0th and 1st dimensions,
+        respectively.
+    """
+    y = np.any(mask_image, axis=1)
+    x = np.any(mask_image, axis=0)
+
+    y_min, y_max = np.where(y)[0][[0, -1]]
+    x_min, x_max = np.where(x)[0][[0, -1]]
+
+    return np.array([[y_min, y_max], [x_min, x_max]], dtype=int)
 
 
 def get_mask_bounding_box_3d(mask_image: BinaryImage) -> np.ndarray:
@@ -242,7 +318,7 @@ def expand_bounding_box(
 
     if image_shape is not None:
         # max index is image_shape - 1
-        max_value = np.asarray(image_shape).reshape((3, 1)) - 1
+        max_value = np.asarray(image_shape).reshape((len(image_shape), 1)) - 1
     else:
         max_value = None
 
@@ -262,6 +338,9 @@ def _lower_triangle_to_full_array(lower_triangle_array: np.ndarray) -> np.ndarra
     full_array : np.ndarray
         The filled in array. Has the same dimensions as input array.
     """
+    # ensure lower triangle
+    lower_triangle_array = np.tril(lower_triangle_array)
+
     # create the array by flipping the lower half
     full_array = lower_triangle_array.T + lower_triangle_array
     idx = np.arange(lower_triangle_array.shape[0])
