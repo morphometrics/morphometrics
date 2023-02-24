@@ -224,6 +224,7 @@ class QtLabelingWidget(QWidget):
         self._label_selection_widget = magicgui(
             self._set_labels_layer,
             labels_layer={"choices": self._get_valid_labels_layers},
+            validated_labels_layer={"choices": self._get_valid_labels_layers},
             auto_call=True,
             call_button=None,
         )
@@ -238,8 +239,12 @@ class QtLabelingWidget(QWidget):
     def _set_labels_layer(
         self,
         labels_layer: Optional[napari.layers.Labels],
+        validated_labels_layer: Optional[napari.layers.Labels],
     ) -> None:
         self._model.labels_layer = labels_layer
+        self._model.validated_labels_layer = validated_labels_layer
+
+        self._viewer.layers.selection.active = self._model.labels_layer
 
     def _get_valid_labels_layers(self, combo_box) -> List[napari.layers.Labels]:
         """Helper function that returns a list of the valid labels layers

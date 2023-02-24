@@ -55,15 +55,12 @@ class ColormapManager:
         return colormap_default, colormap_highlight
 
     def create_highlighted_colormap(
-        self, highlighted_indices: np.ndarray, hide_indices: Optional[np.array] = None
+        self, highlighted_indices: np.ndarray
     ) -> Dict[Optional[int], np.ndarray]:
         highlighted_indices = np.asarray(highlighted_indices)
         new_colormap = self._default_colormap.copy()
         for index in highlighted_indices:
             new_colormap[index] = self._highlight_colormap[index]
-        if hide_indices is not None:
-            for index in hide_indices:
-                new_colormap[index] = 0.4 * new_colormap[index]
         return new_colormap
 
 
@@ -72,11 +69,13 @@ class LabelCurator:
         self,
         viewer: napari.Viewer,
         labels_layer: Optional[Labels] = None,
+        validated_labels_layer: Optional[Labels] = None,
         mode: Union[CurationMode, str] = "paint",
     ):
         self._viewer = viewer
         self._mode = CurationMode(mode)
         self._labels_layer = None
+        self._validated_labels_layer = None
         self._initialized = False
 
         self.events = EmitterGroup(source=self, labels_layer=Event, mode=Event)
@@ -138,6 +137,16 @@ class LabelCurator:
         self._enable_current_mode()
 
         self.events.labels_layer()
+
+    @property
+    def validated_labels_layer(self) -> Optional[napari.layers.Labels]:
+        return self._validated_labels_layer
+
+    @validated_labels_layer.setter
+    def validated_labels_layer(
+        self, validated_labels_layer: Optional[napari.layers.Labels]
+    ):
+        self._validated_labels_layer = validated_labels_layer
 
     def _connect_labels_layer_events(self) -> None:
         """Add callbacks to the labels layer events"""
