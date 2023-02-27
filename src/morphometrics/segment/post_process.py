@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 import numpy as np
+import pandas as pd
 from skimage import measure
 from skimage.transform import resize
 
@@ -44,11 +45,11 @@ def post_process_image(
         resized_image = segmented_image.copy()
 
     # filter out the segmented objects blow the threshold size
-    labeled = measure.label(resized_image)
-    props = measure.regionprops(labeled)
-    postprocessed_image = labeled.copy()
-    for idx in range(0, len(props)):
-        if props[idx].area < threshold:
-            postprocessed_image[labeled == props[idx].label] = 0
+    props = measure.regionprops_table(resized_image, properties=['label', 'area'])
+    props = pd.DataFrame(props)
+    postprocessed_image = segmented_image.copy()
 
+    noise = props.loc[props.loc[:,'area']<threshold,'label']
+    for label in noise:
+        postprocessed_image[postprocessed_image == label] == 0
     return postprocessed_image
