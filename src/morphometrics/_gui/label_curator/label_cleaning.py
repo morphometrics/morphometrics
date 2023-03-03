@@ -171,7 +171,8 @@ class LabelCleaningModel:
             to_layer.data[label_mask] = label_value
 
             # remove the mask from the originating layer
-            selected_layer.data[label_mask] = 0
+            if selected_layer is validated_labels_layer:
+                selected_layer.data[label_mask] = 0
 
         labels_layer.refresh()
         validated_labels_layer.refresh()
