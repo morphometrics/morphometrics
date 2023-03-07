@@ -1,6 +1,6 @@
 from enum import Enum
 from itertools import cycle
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import glasbey
 import napari
@@ -48,7 +48,7 @@ class ColormapManager:
         colors_default[:, 0:3] = colors_default[:, 0:3] * 0.7
 
         colors_default_cylcer = cycle(colors_default)
-        colormap_default = {i: next(colors_default_cylcer) for i in range(5000)}
+        colormap_default = {i: next(colors_default_cylcer) for i in range(2000)}
         colormap_default[0] = np.array([0, 0, 0, 0])
         colormap_default[None] = np.array([0, 0, 0, 1])
 
@@ -68,11 +68,13 @@ class LabelCurator:
     def __init__(
         self,
         viewer: napari.Viewer,
+        ortho_viewers: Optional[List[napari.Viewer]] = None,
         labels_layer: Optional[Labels] = None,
         validated_labels_layer: Optional[Labels] = None,
         mode: Union[CurationMode, str] = "paint",
     ):
         self._viewer = viewer
+        self._ortho_viewers = ortho_viewers
         self._mode = CurationMode(mode)
         self._labels_layer = None
         self._validated_labels_layer = None

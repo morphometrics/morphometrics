@@ -1,11 +1,15 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Dict, List
 
 import napari
 import numpy as np
+from napari.layers.utils.color_transformations import transform_color
+from napari.utils.colormaps import color_dict_to_colormap
 from napari.utils.events import EmitterGroup, Event, EventedSet
 
 if TYPE_CHECKING:
     from morphometrics._gui.label_curator.label_curator import LabelCurator
+
+import time
 
 
 class LabelCleaningModel:
@@ -50,15 +54,24 @@ class LabelCleaningModel:
             self._on_click_selection
         )
 
+        labels_layer_name = self._curator_model.labels_layer.name
+        validated_labels_layer_name = self._curator_model.validated_labels_layer.name
+        if self._curator_model._ortho_viewers is not None:
+            for viewer in self._curator_model._ortho_viewers:
+                viewer.layers[labels_layer_name].mouse_drag_callbacks.append(
+                    self._on_click_selection
+                )
+                viewer.layers[validated_labels_layer_name].mouse_drag_callbacks.append(
+                    self._on_click_selection
+                )
         # set the labels layer coloring mode
         self._curator_model.labels_layer.color_mode = "direct"
-        self._curator_model.labels_layer.color = (
-            self._curator_model._colormap_manager._default_colormap
-        )
-
         self._curator_model.validated_labels_layer.color_mode = "direct"
-        self._curator_model.validated_labels_layer.color = (
-            self._curator_model._colormap_manager._default_colormap
+
+        # set the colormaps
+        self._set_all_labels_colormamaps(
+            labels_colormap=self._curator_model._colormap_manager._default_colormap,
+            validated_labels_colormap=self._curator_model._colormap_manager._default_colormap,
         )
 
     def _on_disable(self):
@@ -76,9 +89,9 @@ class LabelCleaningModel:
             world=True,
         )
 
-        if layer is self._curator_model.labels_layer:
+        if layer.name == self._curator_model.labels_layer.name:
             selection_set = self._selected_labels
-        elif layer is self._curator_model.validated_labels_layer:
+        elif layer.name == self._curator_model.validated_labels_layer.name:
             selection_set = self._selected_validated_labels
         else:
             return
@@ -100,18 +113,108 @@ class LabelCleaningModel:
         if not self.enabled:
             # don't do anything if not curating
             return
+
+        start_time = time.time()
+
+        selected_labels = event.source
         # get the indices of the validated labels
-        self._curator_model.labels_layer.color = (
+        new_colormap = (
             self._curator_model._colormap_manager.create_highlighted_colormap(
-                list(self._selected_labels)
+                list(selected_labels)
             )
         )
 
-        self._curator_model.validated_labels_layer.color = (
-            self._curator_model._colormap_manager.create_highlighted_colormap(
-                list(self._selected_validated_labels)
+        colormap_creation_time = time.time()
+        if selected_labels is self._selected_labels:
+            self._set_labels_layer_colormap(
+                labels_colormap=new_colormap,
             )
+        elif selected_labels is self._selected_validated_labels:
+            self._set_validated_labels_layer_colormap(labels_colormap=new_colormap)
+        else:
+            raise ValueError("unknown selction model")
+        setting_time = time.time()
+
+        print(
+            f"creation: {colormap_creation_time - start_time}, setting: {setting_time - colormap_creation_time}"
         )
+
+    def _set_all_labels_colormamaps(
+        self,
+        labels_colormap: Dict[int, np.ndarray],
+        validated_labels_colormap: Dict[int, np.ndarray],
+    ) -> None:
+        """Set the label colormaps for all viewers"""
+        self._set_labels_layer_colormap(labels_colormap)
+        self._set_validated_labels_layer_colormap(validated_labels_colormap)
+
+    def _set_labels_layer_colormap(
+        self, labels_colormap: Dict[int, np.ndarray]
+    ) -> None:
+        self._curator_model.labels_layer.color = labels_colormap
+
+        if self._curator_model._ortho_viewers is None:
+            # we can return early if there aren't orthoviewers
+            return
+
+        # update the orthoviewers
+        labels_layer_name = self._curator_model.labels_layer.name
+
+        for viewer in self._curator_model._ortho_viewers:
+            viewer.layers[labels_layer_name].color = labels_colormap
+
+        # set the main viewers
+        # self._fast_set_labels_colormap(layer=self._curator_model.labels_layer, colormap=labels_colormap)
+        #
+        # if self._curator_model._ortho_viewers is None:
+        #     # we can return early if there aren't orthoviewers
+        #     return
+        #
+        # # update the orthoviewers
+        # labels_layer_name = self._curator_model.labels_layer.name
+        #
+        # for viewer in self._curator_model._ortho_viewers:
+        #     self._fast_set_labels_colormap(
+        #         layer=viewer.layers[labels_layer_name],
+        #         colormap=labels_colormap
+        #     )
+
+    def _set_validated_labels_layer_colormap(
+        self, labels_colormap: Dict[int, np.ndarray]
+    ) -> None:
+        self._curator_model.validated_labels_layer.color = labels_colormap
+
+        if self._curator_model._ortho_viewers is None:
+            # we can return early if there aren't orthoviewers
+            return
+
+        # update the orthoviewers
+        validated_labels_layer_name = self._curator_model.validated_labels_layer.name
+        for viewer in self._curator_model._ortho_viewers:
+            viewer.layers[validated_labels_layer_name].color = labels_colormap
+
+    def _fast_set_labels_colormap(self, layer, colormap):
+        layer.color = colormap
+
+        if layer._background_label not in colormap:
+            colormap[layer._background_label] = np.array([0, 0, 0, 0])
+        if None not in colormap:
+            colormap[None] = np.array([0, 0, 0, 1])
+
+        colors = {
+            label: transform_color(color_str)[0]
+            for label, color_str in colormap.items()
+        }
+
+        layer._color = colors
+        # set the colormap
+        custom_colormap, label_color_index = color_dict_to_colormap(layer.color)
+
+        # layer._colormap = custom_colormap
+        # layer._label_color_index = label_color_index
+
+        layer._selected_color = layer.get_color(layer.selected_label)
+        layer.events.colormap()
 
     def merge_selected_labels(self):
         """Merge the selected label values.

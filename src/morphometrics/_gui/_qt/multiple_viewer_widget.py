@@ -210,10 +210,16 @@ class MultipleViewerWidget(QSplitter):
             return
 
         order[-3:] = order[-2], order[-3], order[-1]
-        self.ortho_viewer_models[0].dims.order = order
+        self.ortho_viewer_models[1].dims.order = order
         order = list(self.viewer.dims.order)
         order[-3:] = order[-1], order[-2], order[-3]
-        self.ortho_viewer_models[1].dims.order = order
+        self.ortho_viewer_models[0].dims.order = order
+
+        # order[-3:] = order[-2], order[-3], order[-1]
+        # self.ortho_viewer_models[0].dims.order = order
+        # order = list(self.viewer.dims.order)
+        # order[-3:] = order[-1], order[-2], order[-3]
+        # self.ortho_viewer_models[1].dims.order = order
 
     def _layer_added(self, event):
         """add layer to additional viewers and connect all required events.
