@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from morphometrics._gui._qt.multiple_viewer_widget import MultipleViewerWidget
 from morphometrics._gui.label_curator.label_cleaning import LabelCleaningModel
 from morphometrics._gui.label_curator.label_curator import CurationMode, LabelCurator
 from morphometrics.label.image_utils import expand_selected_labels_using_crop
@@ -215,10 +216,15 @@ class QtLabelingModeWidget(QWidget):
 
 
 class QtLabelingWidget(QWidget):
-    def __init__(self, viewer: napari.Viewer, parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        main_viewer: napari.Viewer,
+        ortho_viewers: Optional[List[napari.Viewer]] = None,
+        parent: Optional[QWidget] = None,
+    ):
         super().__init__(parent=parent)
-        self._viewer = viewer
-        self._model = LabelCurator(viewer=viewer)
+        self._viewer = main_viewer
+        self._model = LabelCurator(viewer=main_viewer, ortho_viewers=ortho_viewers)
 
         # make the label selection widget
         self._label_selection_widget = magicgui(
@@ -227,6 +233,12 @@ class QtLabelingWidget(QWidget):
             validated_labels_layer={"choices": self._get_valid_labels_layers},
             auto_call=True,
             call_button=None,
+        )
+        self._viewer.layers.events.inserted.connect(
+            self._label_selection_widget.reset_choices
+        )
+        self._viewer.layers.events.removed.connect(
+            self._label_selection_widget.reset_choices
         )
 
         # get the curation mode widget
@@ -254,3 +266,20 @@ class QtLabelingWidget(QWidget):
             for layer in self._viewer.layers
             if isinstance(layer, napari.layers.Labels)
         ]
+
+
+class QtMultiCanvasLabelingWidget(MultipleViewerWidget):
+    def __init__(self, viewer: napari.Viewer):
+        super().__init__(viewer)
+        # self.flood_fill_widget = FloodFillWidget(
+        #     main_viewer=viewer, ortho_viewers=self.ortho_viewer_models
+        # )
+        # self.addWidget(self.flood_fill_widget)
+        self.labeling_widget = QtLabelingWidget(
+            main_viewer=viewer, ortho_viewers=self.ortho_viewer_models
+        )
+        self.addWidget(self.labeling_widget)
+
+        self.viewer.axes.visible = True
+        for model in self.ortho_viewer_models:
+            model.axes.visible = True
