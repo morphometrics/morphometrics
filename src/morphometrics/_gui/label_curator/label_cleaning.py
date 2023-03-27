@@ -37,6 +37,10 @@ class LabelCleaningModel:
         self.events.enabled()
 
     def _on_enable(self):
+
+        # check if the validated labels layer is set
+        validated_labels_layer_set = self._curator_model._ortho_viewers is not None
+
         # add the lables layer events
         self._selected_labels.events.changed.connect(self._on_selection_changed)
         self._curator_model.labels_layer.mouse_drag_callbacks.append(
@@ -44,26 +48,33 @@ class LabelCleaningModel:
         )
 
         # add the validated labels layer events
-        self._selected_validated_labels.events.changed.connect(
-            self._on_selection_changed
-        )
-        self._curator_model.validated_labels_layer.mouse_drag_callbacks.append(
-            self._on_click_selection
-        )
+        if self._curator_model.validated_labels_layer is not None:
+            self._selected_validated_labels.events.changed.connect(
+                self._on_selection_changed
+            )
+            self._curator_model.validated_labels_layer.mouse_drag_callbacks.append(
+                self._on_click_selection
+            )
 
         labels_layer_name = self._curator_model.labels_layer.name
-        validated_labels_layer_name = self._curator_model.validated_labels_layer.name
-        if self._curator_model._ortho_viewers is not None:
+        if validated_labels_layer_set:
+            validated_labels_layer_name = (
+                self._curator_model.validated_labels_layer.name
+            )
+        if validated_labels_layer_set:
             for viewer in self._curator_model._ortho_viewers:
                 viewer.layers[labels_layer_name].mouse_drag_callbacks.append(
                     self._on_click_selection
                 )
-                viewer.layers[validated_labels_layer_name].mouse_drag_callbacks.append(
-                    self._on_click_selection
-                )
+                if validated_labels_layer_set:
+                    viewer.layers[
+                        validated_labels_layer_name
+                    ].mouse_drag_callbacks.append(self._on_click_selection)
         # set the labels layer coloring mode
         self._curator_model.labels_layer.color_mode = "direct"
-        self._curator_model.validated_labels_layer.color_mode = "direct"
+
+        if validated_labels_layer_set:
+            self._curator_model.validated_labels_layer.color_mode = "direct"
 
         # set the colormaps
         self._set_all_labels_colormamaps(
@@ -171,7 +182,8 @@ class LabelCleaningModel:
     def _set_validated_labels_layer_colormap(
         self, labels_colormap: Dict[int, np.ndarray]
     ) -> None:
-        self._curator_model.validated_labels_layer.color = labels_colormap
+        if self._curator_model.validated_labels_layer is not None:
+            self._curator_model.validated_labels_layer.color = labels_colormap
 
         if self._curator_model._ortho_viewers is None:
             # we can return early if there aren't orthoviewers
