@@ -39,7 +39,7 @@ class ColormapManager:
         colors_highlight = np.column_stack((colors, np.ones((len(colors),))))
         colors_highlight_cycler = cycle(colors_highlight)
 
-        colormap_highlight = {i: next(colors_highlight_cycler) for i in range(5000)}
+        colormap_highlight = {i: next(colors_highlight_cycler) for i in range(6000)}
         colormap_highlight[0] = np.array([0, 0, 0, 0])
         colormap_highlight[None] = np.array([0, 0, 0, 1])
 
@@ -48,7 +48,7 @@ class ColormapManager:
         colors_default[:, 0:3] = colors_default[:, 0:3] * 0.7
 
         colors_default_cylcer = cycle(colors_default)
-        colormap_default = {i: next(colors_default_cylcer) for i in range(2000)}
+        colormap_default = {i: next(colors_default_cylcer) for i in range(6000)}
         colormap_default[0] = np.array([0, 0, 0, 0])
         colormap_default[None] = np.array([0, 0, 0, 1])
 
