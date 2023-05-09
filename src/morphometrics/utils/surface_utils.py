@@ -268,9 +268,7 @@ def closed_surfaces_to_label_image(
     label_image = np.zeros(image_shape_voxels, dtype=np.uint16)
 
     for i, mesh in enumerate(meshes):
-        voxelized, origin = voxelize_closed_surface(
-            mesh, pitch=pitch, repair_mesh=repair_mesh
-        )
+        voxelized, origin = voxelize_closed_surface(mesh, pitch=pitch)
 
         # get the coordinates of the voxels inside of the mesh
         filled_voxel_coordinates = np.argwhere(voxelized)
