@@ -99,7 +99,33 @@ def label_image_to_surface_collection(
     n_mesh_smoothing_iterations: int = 10,
     diffusion_coefficient: float = 0.5,
 ) -> List[Trimesh]:
-    """Convert a label image into a collection of surfaces."""
+    """Convert a label image into a collection of surfaces.
+
+    Parameters
+    ----------
+    label_image : LabelImage
+        The image to transform into surfaces.
+    label_smoothing_radius : Optional[int]
+        The radius of the morphological filter to smooth the label
+        image before meshing. This is similar to performing a morphological
+        opening on the label image.
+        If None, no label smoothing is performed. Default value is None.
+     n_mesh_smoothing_iterations : int
+        The number of interations of smoothing to perform. Smoothing is
+        done by the trimesh mutable diffusion laplacian filter:
+        https://trimsh.org/trimesh.smoothing.html#trimesh.smoothing.filter_mut_dif_laplacian
+        Default value is 10.
+    diffusion_coefficient : float
+        The diffusion coefficient for smoothing. 0 is no diffusion.
+        Default value is 0.5.
+        https://trimsh.org/trimesh.smoothing.html#trimesh.smoothing.filter_mut_dif_laplacian
+
+    Returns
+    -------
+    mesh : trimesh.Trimesh
+        The resulting mesh as a trimesh.Trimesh object.
+        https://trimsh.org/trimesh.base.html#github-com-mikedh-trimesh
+    """
     import pyclesperanto_prototype as cle
 
     if label_smoothing_radius is not None:
