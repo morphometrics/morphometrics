@@ -49,9 +49,7 @@ def test_voxelize_closed_surface():
     pitch = 0.5
     mesh = _make_cuboid_mesh(origin=origin, extents=cube_extents)
 
-    voxelized, image_origin = voxelize_closed_surface(
-        mesh, pitch=pitch, repair_mesh=True
-    )
+    voxelized, image_origin = voxelize_closed_surface(mesh, pitch=pitch)
 
     np.testing.assert_allclose(image_origin, [9.5, -0.5, 9.5])
     np.testing.assert_allclose([63, 63, 63], voxelized.shape)
@@ -67,7 +65,6 @@ def test_closed_surfaces_to_label_image_no_crop():
         [mesh_0, mesh_1],
         pitch=pitch,
         crop_around_mesh=False,
-        repair_mesh=True,
     )
 
     np.testing.assert_allclose(image_origin, [0, 0, 0])

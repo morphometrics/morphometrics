@@ -161,7 +161,7 @@ def test_get_mask_bounding_box_3d():
 
     bounding_box = get_mask_bounding_box_3d(mask_image)
     np.testing.assert_allclose(bounding_box, expected_bounding_box)
-    assert bounding_box.dtype == np.int
+    assert bounding_box.dtype == int
 
 
 def test_expand_bounding_box():

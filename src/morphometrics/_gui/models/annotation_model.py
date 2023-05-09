@@ -269,7 +269,7 @@ class ClusterAnnotationModel:
 
     def _update_table(self, df: pd.DataFrame, new_column: pd.Series):
         column_name = new_column.name
-        for index, value in new_column.iteritems():
+        for index, value in new_column.items():
             df.at[index, column_name] = value
 
     def _get_group_by_keys(self, combo_widget=None) -> List[str]:
