@@ -212,7 +212,7 @@ def measure_surface_properties_from_labels(
             continue
         label_mask = label_image == label_index
         smoothed_mesh = binary_mask_to_surface(
-            label_mask, n_mesh_smoothing_interations=n_mesh_smoothing_interations
+            label_mask, n_mesh_smoothing_iterations=n_mesh_smoothing_interations
         )
         object_measurements = measure_surface_properties(surface=smoothed_mesh)
 

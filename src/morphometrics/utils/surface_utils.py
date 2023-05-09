@@ -1,11 +1,11 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pymeshfix
 import trimesh.voxel.creation
 from skimage.measure import marching_cubes
 from trimesh import Trimesh
-from trimesh.smoothing import filter_taubin
+from trimesh.smoothing import filter_mut_dif_laplacian
 
 from ..types import BinaryImage, LabelImage
 
@@ -51,7 +51,9 @@ def repair_mesh(mesh: Trimesh) -> Trimesh:
 
 
 def binary_mask_to_surface(
-    object_mask: BinaryImage, n_mesh_smoothing_interations: int = 50
+    object_mask: BinaryImage,
+    n_mesh_smoothing_iterations: int = 10,
+    diffusion_coefficient: float = 0.5,
 ) -> Trimesh:
     """Convert surface of a 3D binary mask (segmented object) into a watertight mesh.
 
@@ -59,11 +61,15 @@ def binary_mask_to_surface(
     ----------
     object_mask  : BinaryMask
         A 3D binary image corresponding to the object you want to mesh.
-    n_mesh_smoothing_interations : int
-        The number of interations of smooting to perform. Smoothing is
-        done by the trimesh taubin filter:
-        https://trimsh.org/trimesh.smoothing.html#trimesh.smoothing.filter_taubin
-        Default value is 50.
+    n_mesh_smoothing_iterations : int
+        The number of interations of smoothing to perform. Smoothing is
+        done by the trimesh mutable diffusion laplacian filter:
+        https://trimsh.org/trimesh.smoothing.html#trimesh.smoothing.filter_mut_dif_laplacian
+        Default value is 10.
+    diffusion_coefficient : float
+        The diffusion coefficient for smoothing. 0 is no diffusion.
+        Default value is 0.5.
+        https://trimsh.org/trimesh.smoothing.html#trimesh.smoothing.filter_mut_dif_laplacian
 
     Returns
     -------
@@ -79,14 +85,45 @@ def binary_mask_to_surface(
     mesh = Trimesh(vertices=vertices_clean, faces=faces_clean)
 
     # optionally clean up the mesh
-    if n_mesh_smoothing_interations > 0:
-        filter_taubin(mesh, iterations=n_mesh_smoothing_interations)
+    if n_mesh_smoothing_iterations > 0:
+        filter_mut_dif_laplacian(
+            mesh, iterations=n_mesh_smoothing_iterations, lamb=diffusion_coefficient
+        )
 
     return mesh
 
 
+def label_image_to_surface_collection(
+    label_image: LabelImage,
+    label_smoothing_radius: Optional[int] = None,
+    n_mesh_smoothing_iterations: int = 10,
+    diffusion_coefficient: float = 0.5,
+) -> List[Trimesh]:
+    """Convert a label image into a collection of surfaces."""
+    import pyclesperanto_prototype as cle
+
+    if label_smoothing_radius is not None:
+        # perform label smoothing
+        label_image = np.asarray(
+            cle.smooth_labels(label_image, radius=label_smoothing_radius)
+        )
+
+    label_values = np.unique(label_image)
+
+    return [
+        binary_mask_to_surface(
+            label_image == label_index,
+            n_mesh_smoothing_iterations=n_mesh_smoothing_iterations,
+            diffusion_coefficient=diffusion_coefficient,
+        )
+        for label_index in label_values
+        if label_index != 0
+    ]
+
+
 def voxelize_closed_surface(
-    mesh: Trimesh, pitch: float, repair_mesh: bool = True
+    mesh: Trimesh,
+    pitch: float,
 ) -> Tuple[BinaryImage, np.ndarray]:
     """Voxelize a closed surface mesh.
 
@@ -97,9 +134,6 @@ def voxelize_closed_surface(
     pitch : float
         The voxel width in mesh units. Voxels have the
         same width in each dimension (i.e., are cubes).
-    repair_mesh : bool
-        Flag to attept to repair the mesh if set to True.
-        Default value is True.
 
     Returns
     -------
@@ -115,7 +149,7 @@ def voxelize_closed_surface(
     # convert the centroid to the nearest integer multiple of the pitch
     rounded_centroid = _round_to_pitch(coordinate=centroid, pitch=pitch)
 
-    # find the minimum cube half-width that encompases the full mesh
+    # find the minimum cube half-width that encompasses the full mesh
     cube_half_width = np.max(bounding_box - rounded_centroid)
 
     # get the number of voxels for the cube half-width
