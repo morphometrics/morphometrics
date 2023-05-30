@@ -2,9 +2,9 @@ import napari
 import numpy as np
 
 from morphometrics.data import simple_labeled_cube
-from morphometrics.measure import available_measurments
+from morphometrics.measure import available_measurements
 
-print(f"available_measurements: {available_measurments()}")
+print(f"available_measurements: {available_measurements()}")
 
 label_image = simple_labeled_cube()
 intensity_image = np.random.random(label_image.shape)
