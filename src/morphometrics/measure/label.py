@@ -3,12 +3,12 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from morphometrics_engine import register_measurement, register_measurement_set
 from skimage.measure import regionprops_table
 from tqdm.autonotebook import tqdm
 
 from ..types import IntensityImage, LabelImage, LabelMeasurementTable
 from ..utils.surface_utils import binary_mask_to_surface
-from . import register_measurement, register_measurement_set
 from .surface import measure_surface_properties
 
 

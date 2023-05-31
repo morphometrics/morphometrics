@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
+from morphometrics_engine import register_measurement
 from skimage.measure import regionprops_table
 
 from ..types import IntensityImage, LabelImage, LabelMeasurementTable
 from ..utils.image_utils import make_boundary_mask
 from ..utils.math_utils import safe_divide
-from . import register_measurement
 
 
 @register_measurement(name="boundary_intensity", uses_intensity_image=True)
