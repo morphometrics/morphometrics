@@ -1,9 +1,8 @@
 from copy import deepcopy
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import networkx as nx
 import numpy as np
-from cfgv import Optional
 from morphosamplers.sampler import (
     generate_2d_grid,
     place_sampling_grids,
