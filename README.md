@@ -6,6 +6,8 @@
 [![tests](https://github.com/morphometrics/morphometrics/workflows/tests/badge.svg)](https://github.com/morphometrics/morphometrics/actions)
 [![codecov](https://codecov.io/gh/morphometrics/morphometrics/branch/main/graph/badge.svg)](https://codecov.io/gh/morphometrics/morphometrics)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/morphometrics)](https://napari-hub.org/plugins/morphometrics)
+[![DOI](https://zenodo.org/badge/452655773.svg)](https://zenodo.org/badge/latestdoi/452655773)
+
 
 A plugin for quantifying shape and neighborhoods from images.
 
